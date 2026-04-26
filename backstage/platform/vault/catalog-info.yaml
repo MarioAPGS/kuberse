@@ -1,0 +1,150 @@
+##
+## ════════════════════════════════════════════════════════════════
+## System: vault
+## Namespace: platform
+## HashiCorp Vault secrets management platform.
+## ════════════════════════════════════════════════════════════════
+##
+
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: vault
+  namespace: platform
+  title: Vault
+  description: >
+    HashiCorp Vault HA cluster (3 replicas, Raft storage). Manages all
+    platform secrets, KV v2 mounts (`secret/` and `buildapps/`),
+    Kubernetes auth, dynamic policy/role creation, and Vault Secrets Operator.
+  annotations:
+    backstage.io/techdocs-ref: url:${GIT_BASE_URL}/kuberse-helm/tree/main/helm/platform/vault
+    backstage.io/kubernetes-id: vault
+    backstage.io/kubernetes-namespace: platform
+    backstage.io/kubernetes-label-selector: app.kubernetes.io/name=vault
+  links:
+    - url: https://vault.${BASE_DOMAIN}
+      title: Vault UI
+      icon: dashboard
+    - url: https://developer.hashicorp.com/vault/docs
+      title: Vault Docs
+      icon: docs
+spec:
+  type: secrets
+  owner: group:default/admins
+  domain: default/kuberse
+
+---
+## ─────────────────────────────────────────────
+## Component: vault-init-job -- Initializes/unseals Vault
+## ─────────────────────────────────────────────
+
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: vault-init-job
+  namespace: platform
+  description: >
+    One-shot Kubernetes Job that initializes Vault (5 shares, threshold 3),
+    unseals all HA pods, enables KV v2 mounts, and configures Kubernetes auth.
+  annotations:
+    backstage.io/kubernetes-id: vault-init-job
+    backstage.io/kubernetes-namespace: platform
+    backstage.io/kubernetes-label-selector: job-name=vault-init-job
+spec:
+  type: job
+  lifecycle: production
+  owner: group:default/admins
+  system: vault
+
+---
+## ─────────────────────────────────────────────
+## Component: vault-secrets-operator -- Syncs Vault secrets to K8s
+## ─────────────────────────────────────────────
+
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: vault-secrets-operator
+  namespace: platform
+  description: >
+    Vault Secrets Operator (VSO) -- watches VaultStaticSecret CRDs and syncs
+    secrets from Vault KV v2 into Kubernetes Secrets.
+  annotations:
+    backstage.io/kubernetes-id: vault-secrets-operator
+    backstage.io/kubernetes-namespace: platform
+    backstage.io/kubernetes-label-selector: app.kubernetes.io/name=vault-secrets-operator
+  links:
+    - url: https://developer.hashicorp.com/vault/docs/platform/k8s/vso
+      title: VSO Docs
+      icon: docs
+spec:
+  type: service
+  lifecycle: production
+  owner: group:default/admins
+  system: vault
+
+---
+## ─────────────────────────────────────────────
+## Component: vault-module-config -- Provisions policies & roles
+## ─────────────────────────────────────────────
+
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: vault-module-config
+  namespace: platform
+  description: >
+    CronJob (inside the vault chart) that discovers ConfigMaps labeled
+    `vault: setup-creds` and provisions Vault ACL policies and Kubernetes
+    auth roles for every platform module. Runs every 5 minutes.
+  annotations:
+    backstage.io/techdocs-ref: url:${GIT_BASE_URL}/kuberse-helm/tree/main/helm/platform/vault
+    backstage.io/kubernetes-id: vault-module-config
+    backstage.io/kubernetes-namespace: platform
+    backstage.io/kubernetes-label-selector: app=vault-module-config
+spec:
+  type: cronjob
+  lifecycle: production
+  owner: group:default/admins
+  system: vault
+
+---
+## ════════════════════════════════════════════════════════════════
+## Service Accounts -- vault
+## ════════════════════════════════════════════════════════════════
+
+apiVersion: backstage.io/v1alpha1
+kind: User
+metadata:
+  name: sa-vault-config
+  namespace: platform
+  description: >
+    ServiceAccount for Vault init Job. RBAC access to pods/exec and
+    secrets in the platform namespace.
+  annotations:
+    backstage.io/kubernetes-id: vault-config
+    backstage.io/kubernetes-namespace: platform
+spec:
+  profile:
+    displayName: "vault-config (SA)"
+  memberOf:
+    - default/admins
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: User
+metadata:
+  name: sa-vault-module-config
+  namespace: platform
+  description: >
+    ServiceAccount for vault module-config CronJob. Role-level access to
+    pods, pods/exec, secrets in platform namespace plus ClusterRole for
+    namespace, ServiceAccount, and ConfigMap discovery.
+  annotations:
+    backstage.io/kubernetes-id: vault-module-config
+    backstage.io/kubernetes-namespace: platform
+spec:
+  profile:
+    displayName: "vault-module-config (SA)"
+  memberOf:
+    - default/admins

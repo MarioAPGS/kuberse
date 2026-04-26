@@ -1,0 +1,29 @@
+##
+## ════════════════════════════════════════════════════════════════
+## System: cloudbeaver
+## Namespace: platform
+## Web-based database management.
+## ════════════════════════════════════════════════════════════════
+##
+
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: cloudbeaver
+  namespace: platform
+  title: CloudBeaver
+  description: >
+    CloudBeaver web database manager -- browser-based tool for managing databases.
+  annotations:
+    backstage.io/techdocs-ref: url:${GIT_BASE_URL}/kuberse-helm/tree/main/helm/platform/cloudbeaver
+    backstage.io/kubernetes-id: cloudbeaver
+    backstage.io/kubernetes-namespace: platform
+    backstage.io/kubernetes-label-selector: app.kubernetes.io/name=cloudbeaver
+  links:
+    - url: https://cloudbeaver.${BASE_DOMAIN}
+      title: CloudBeaver (DB UI)
+      icon: dashboard
+spec:
+  type: service
+  owner: group:default/admins
+  domain: default/kuberse

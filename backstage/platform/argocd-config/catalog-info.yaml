@@ -1,0 +1,33 @@
+##
+## ════════════════════════════════════════════════════════════════
+## System: argocd
+## Namespace: argocd
+## GitOps continuous delivery engine.
+## ════════════════════════════════════════════════════════════════
+##
+
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: argocd
+  namespace: argocd
+  title: ArgoCD
+  description: >
+    GitOps continuous delivery engine. Manages the entire platform
+    lifecycle through an App-of-Apps bootstrap pattern with sync waves.
+  annotations:
+    backstage.io/techdocs-ref: url:${GIT_BASE_URL}/kuberse-helm/tree/main/helm/platform/argocd-config
+    backstage.io/kubernetes-id: argocd-config
+    backstage.io/kubernetes-namespace: argocd
+    backstage.io/kubernetes-label-selector: app.kubernetes.io/part-of=argocd
+  links:
+    - url: https://argocd.${BASE_DOMAIN}
+      title: ArgoCD UI
+      icon: dashboard
+    - url: https://argo-cd.readthedocs.io/en/stable/
+      title: ArgoCD Docs
+      icon: docs
+spec:
+  type: gitops
+  owner: group:default/admins
+  domain: default/kuberse
