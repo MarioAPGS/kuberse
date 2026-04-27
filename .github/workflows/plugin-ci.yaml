@@ -1,0 +1,95 @@
+name: Plugin CI
+
+on:
+  workflow_call:
+    inputs:
+      registry-images:
+        description: Registry URL for images (e.g. ghcr.io/org)
+        type: string
+        required: true
+      registry-charts:
+        description: OCI registry URL for charts (e.g. oci://ghcr.io/org/charts)
+        type: string
+        required: true
+      registry-user:
+        description: Registry username
+        type: string
+        required: true
+    secrets:
+      registry-password:
+        description: Registry password or token
+        required: true
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      images: ${{ steps.changes.outputs.images }}
+      charts: ${{ steps.changes.outputs.charts }}
+      has-images: ${{ steps.changes.outputs.has-images }}
+      has-charts: ${{ steps.changes.outputs.has-charts }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - id: changes
+        shell: bash
+        run: |
+          CHANGED=$(git diff --name-only HEAD^ HEAD 2>/dev/null || git ls-tree --name-only -r HEAD)
+
+          # Detect changed images (images/<name>/*) - only dirs with a Dockerfile
+          IMAGES=$(echo "$CHANGED" | grep '^images/' | cut -d/ -f2 | sort -u | while read dir; do
+            [ -f "images/$dir/Dockerfile" ] && echo "$dir"
+          done | jq -R . | jq -sc .)
+
+          # Detect changed charts (charts/<name>/*) - only dirs with a Chart.yaml
+          CHARTS=$(echo "$CHANGED" | grep '^charts/' | cut -d/ -f2 | sort -u | while read dir; do
+            [ -f "charts/$dir/Chart.yaml" ] && echo "$dir"
+          done | jq -R . | jq -sc .)
+
+          echo "images=$IMAGES" >> $GITHUB_OUTPUT
+          echo "charts=$CHARTS" >> $GITHUB_OUTPUT
+          echo "has-images=$( [ "$IMAGES" != '[]' ] && echo true || echo false )" >> $GITHUB_OUTPUT
+          echo "has-charts=$( [ "$CHARTS" != '[]' ] && echo true || echo false )" >> $GITHUB_OUTPUT
+
+  build-images:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has-images == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        image: ${{ fromJson(needs.detect-changes.outputs.images) }}
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ${ORG_NAME}/kuberse/.github/actions/build-image@main
+        with:
+          image-name: ${{ matrix.image }}
+          context: images/${{ matrix.image }}
+          registry: ${{ inputs.registry-images }}
+          registry-user: ${{ inputs.registry-user }}
+          registry-password: ${{ secrets.registry-password }}
+
+  build-charts:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has-charts == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        chart: ${{ fromJson(needs.detect-changes.outputs.charts) }}
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ${ORG_NAME}/kuberse/.github/actions/build-chart@main
+        with:
+          chart-path: charts/${{ matrix.chart }}
+          registry: ${{ inputs.registry-charts }}
+          registry-user: ${{ inputs.registry-user }}
+          registry-password: ${{ secrets.registry-password }}

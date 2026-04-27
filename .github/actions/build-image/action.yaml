@@ -1,0 +1,59 @@
+name: Build & Push Image
+description: Build a Docker image and push to an OCI registry (GHCR or Gitea)
+
+inputs:
+  image-name:
+    description: Name of the image to build
+    required: true
+  context:
+    description: Docker build context path
+    required: true
+  dockerfile:
+    description: Path to Dockerfile relative to context
+    default: Dockerfile
+  registry:
+    description: Registry URL (e.g. ghcr.io/org or gitea.example.com/org)
+    required: true
+  registry-user:
+    description: Registry username
+    required: true
+  registry-password:
+    description: Registry password or token
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Extract registry host
+      id: registry
+      shell: bash
+      run: |
+        echo "host=$(echo '${{ inputs.registry }}' | cut -d/ -f1)" >> $GITHUB_OUTPUT
+
+    - name: Login to registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ steps.registry.outputs.host }}
+        username: ${{ inputs.registry-user }}
+        password: ${{ inputs.registry-password }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ inputs.registry }}/${{ inputs.image-name }}
+        tags: |
+          type=raw,value=latest
+          type=sha,prefix=
+
+    - name: Build and push
+      uses: docker/build-push-action@v6
+      with:
+        context: ${{ inputs.context }}
+        file: ${{ inputs.context }}/${{ inputs.dockerfile }}
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}

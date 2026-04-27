@@ -1,0 +1,57 @@
+name: Build & Push Chart
+description: Package a Helm chart and push to an OCI registry (GHCR or Gitea)
+
+inputs:
+  chart-path:
+    description: Path to the chart directory
+    required: true
+  registry:
+    description: OCI registry URL (e.g. oci://ghcr.io/org/charts or oci://gitea.example.com/org/charts)
+    required: true
+  registry-user:
+    description: Registry username
+    required: true
+  registry-password:
+    description: Registry password or token
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Install Helm
+      uses: azure/setup-helm@v4
+      with:
+        version: latest
+
+    - name: Login to registry
+      shell: bash
+      run: |
+        REGISTRY_HOST=$(echo "${{ inputs.registry }}" | sed 's|oci://||' | cut -d/ -f1)
+        echo "${{ inputs.registry-password }}" | helm registry login "$REGISTRY_HOST" \
+          -u "${{ inputs.registry-user }}" --password-stdin
+
+    - name: Get chart info
+      id: info
+      shell: bash
+      run: |
+        VERSION=$(grep '^version:' "${{ inputs.chart-path }}/Chart.yaml" | awk '{print $2}')
+        NAME=$(grep '^name:' "${{ inputs.chart-path }}/Chart.yaml" | awk '{print $2}')
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "name=$NAME" >> $GITHUB_OUTPUT
+
+    - name: Update dependencies
+      shell: bash
+      run: |
+        if [ -f "${{ inputs.chart-path }}/Chart.lock" ]; then
+          helm dependency update "${{ inputs.chart-path }}/"
+        fi
+
+    - name: Package chart
+      shell: bash
+      run: helm package "${{ inputs.chart-path }}/"
+
+    - name: Push chart
+      shell: bash
+      run: |
+        helm push "${{ steps.info.outputs.name }}-${{ steps.info.outputs.version }}.tgz" \
+          "${{ inputs.registry }}"
