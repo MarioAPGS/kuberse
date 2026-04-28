@@ -1,0 +1,247 @@
+name: Plugin Release
+
+on:
+  workflow_call:
+    inputs:
+      registry-images:
+        description: Registry URL for images (e.g. ghcr.io/org)
+        type: string
+        required: true
+      registry-charts:
+        description: OCI registry URL for charts (e.g. oci://ghcr.io/org/plugin-name/charts)
+        type: string
+        required: true
+      registry-manifest:
+        description: OCI manifest artifact URL (e.g. ghcr.io/org/plugin-manifest)
+        type: string
+        required: true
+      registry-user:
+        description: Registry username
+        type: string
+        required: true
+    secrets:
+      registry-password:
+        description: Registry password or token
+        required: true
+
+jobs:
+  # ── Determine next semantic version from conventional commits ──
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.semver.outputs.version }}
+      bump: ${{ steps.semver.outputs.bump }}
+      prev-tag: ${{ steps.semver.outputs.prev-tag }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compute next semantic version
+        id: semver
+        shell: bash
+        run: |
+          # Find the latest semver tag
+          PREV_TAG=$(git tag -l 'v*' --sort=-v:refname | head -1)
+          if [ -z "$PREV_TAG" ]; then
+            PREV_TAG=""
+            PREV_VERSION="0.0.0"
+          else
+            PREV_VERSION="${PREV_TAG#v}"
+          fi
+
+          echo "prev-tag=$PREV_TAG" >> "$GITHUB_OUTPUT"
+
+          # Parse previous version
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$PREV_VERSION"
+
+          # Analyze commits since last tag
+          if [ -n "$PREV_TAG" ]; then
+            COMMITS=$(git log "$PREV_TAG"..HEAD --format="%s")
+          else
+            COMMITS=$(git log --format="%s")
+          fi
+
+          if [ -z "$COMMITS" ]; then
+            echo "No new commits since $PREV_TAG"
+            echo "bump=none" >> "$GITHUB_OUTPUT"
+            echo "version=$PREV_VERSION" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Determine bump type from conventional commits
+          BUMP="none"
+          while IFS= read -r msg; do
+            case "$msg" in
+              *"BREAKING CHANGE"*|*"!"*) BUMP="major" ;;
+            esac
+          done <<< "$COMMITS"
+
+          if [ "$BUMP" = "none" ]; then
+            while IFS= read -r msg; do
+              case "$msg" in
+                feat*) [ "$BUMP" != "major" ] && BUMP="minor" ;;
+              esac
+            done <<< "$COMMITS"
+          fi
+
+          if [ "$BUMP" = "none" ]; then
+            while IFS= read -r msg; do
+              case "$msg" in
+                fix*|perf*|refactor*) BUMP="patch" ;;
+              esac
+            done <<< "$COMMITS"
+          fi
+
+          # If still none (e.g. docs/chore only), default to patch
+          [ "$BUMP" = "none" ] && BUMP="patch"
+
+          # Bump version
+          case "$BUMP" in
+            major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+            minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
+            patch) PATCH=$((PATCH + 1)) ;;
+          esac
+
+          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+          echo "bump=$BUMP" >> "$GITHUB_OUTPUT"
+          echo "version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+          echo "Bump: $BUMP | $PREV_VERSION -> $NEW_VERSION"
+
+  # ── Build and push charts ──
+  build-charts:
+    needs: version
+    if: needs.version.outputs.bump != 'none'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Find charts
+        id: find
+        shell: bash
+        run: |
+          CHARTS=$(find charts/ -name Chart.yaml -exec dirname {} \; 2>/dev/null | jq -R . | jq -sc .)
+          echo "charts=$CHARTS" >> "$GITHUB_OUTPUT"
+          echo "has-charts=$( [ "$CHARTS" != '[]' ] && echo true || echo false )" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push charts
+        if: steps.find.outputs.has-charts == 'true'
+        shell: bash
+        env:
+          REGISTRY: ${{ inputs.registry-charts }}
+          USER: ${{ inputs.registry-user }}
+          PASSWORD: ${{ secrets.registry-password }}
+        run: |
+          REGISTRY_HOST=$(echo "$REGISTRY" | sed 's|oci://||' | cut -d/ -f1)
+          echo "$PASSWORD" | helm registry login "$REGISTRY_HOST" -u "$USER" --password-stdin
+
+          for chart_dir in $(echo '${{ steps.find.outputs.charts }}' | jq -r '.[]'); do
+            NAME=$(grep '^name:' "$chart_dir/Chart.yaml" | awk '{print $2}')
+            VERSION=$(grep '^version:' "$chart_dir/Chart.yaml" | awk '{print $2}')
+
+            if [ -f "$chart_dir/Chart.lock" ]; then
+              helm dependency update "$chart_dir/"
+            fi
+
+            helm package "$chart_dir/"
+            helm push "${NAME}-${VERSION}.tgz" "$REGISTRY"
+            rm -f "${NAME}-${VERSION}.tgz"
+            echo "Pushed $NAME:$VERSION"
+          done
+
+  # ── Build and push images ──
+  build-images:
+    needs: version
+    if: needs.version.outputs.bump != 'none'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Find images
+        id: find
+        shell: bash
+        run: |
+          IMAGES=$(find images/ -name Dockerfile -exec dirname {} \; 2>/dev/null | xargs -I{} basename {} | jq -R . | jq -sc .)
+          echo "images=$IMAGES" >> "$GITHUB_OUTPUT"
+          echo "has-images=$( [ "$IMAGES" != '[]' ] && echo true || echo false )" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        if: steps.find.outputs.has-images == 'true'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to registry
+        if: steps.find.outputs.has-images == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ inputs.registry-images }}
+          username: ${{ inputs.registry-user }}
+          password: ${{ secrets.registry-password }}
+
+      - name: Build and push images
+        if: steps.find.outputs.has-images == 'true'
+        shell: bash
+        run: |
+          for img in $(echo '${{ steps.find.outputs.images }}' | jq -r '.[]'); do
+            docker buildx build \
+              --push \
+              --tag "${{ inputs.registry-images }}/$img:latest" \
+              --tag "${{ inputs.registry-images }}/$img:${{ needs.version.outputs.version }}" \
+              "images/$img/"
+            echo "Pushed $img:${{ needs.version.outputs.version }}"
+          done
+
+  # ── Publish manifest artifact + create git tag ──
+  publish:
+    needs: [version, build-charts, build-images]
+    if: |
+      always() &&
+      needs.version.outputs.bump != 'none' &&
+      !contains(needs.*.result, 'failure')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update plugin.yaml version
+        shell: bash
+        run: |
+          sed -i "s/^  version:.*/  version: ${{ needs.version.outputs.version }}/" plugin.yaml
+
+      - name: Login to registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ inputs.registry-user }}
+          password: ${{ secrets.registry-password }}
+
+      - name: Install ORAS
+        uses: oras-project/setup-oras@v1
+
+      - name: Push manifest artifact (version + latest)
+        shell: bash
+        run: |
+          oras push "${{ inputs.registry-manifest }}:${{ needs.version.outputs.version }}" \
+            plugin.yaml \
+            manifests/
+          oras push "${{ inputs.registry-manifest }}:latest" \
+            plugin.yaml \
+            manifests/
+          echo "Published manifest: ${{ needs.version.outputs.version }} + latest"
+
+      - name: Create and push git tag
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "v${{ needs.version.outputs.version }}" -m "Release v${{ needs.version.outputs.version }}"
+          git push origin "v${{ needs.version.outputs.version }}"
