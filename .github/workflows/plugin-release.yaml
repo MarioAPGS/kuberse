@@ -125,7 +125,11 @@ jobs:
         id: find
         shell: bash
         run: |
-          CHARTS=$(find charts/ -name Chart.yaml -exec dirname {} \; 2>/dev/null | jq -R . | jq -sc .)
+          if [ -d charts ]; then
+            CHARTS=$(find charts/ -name Chart.yaml -exec dirname {} \; | jq -R . | jq -sc .)
+          else
+            CHARTS='[]'
+          fi
           echo "charts=$CHARTS" >> "$GITHUB_OUTPUT"
           echo "has-charts=$( [ "$CHARTS" != '[]' ] && echo true || echo false )" >> "$GITHUB_OUTPUT"
 
@@ -169,7 +173,11 @@ jobs:
         id: find
         shell: bash
         run: |
-          IMAGES=$(find images/ -name Dockerfile -exec dirname {} \; 2>/dev/null | xargs -I{} basename {} | jq -R . | jq -sc .)
+          if [ -d images ]; then
+            IMAGES=$(find images/ -name Dockerfile -exec dirname {} \; | xargs -I{} basename {} | jq -R . | jq -sc .)
+          else
+            IMAGES='[]'
+          fi
           echo "images=$IMAGES" >> "$GITHUB_OUTPUT"
           echo "has-images=$( [ "$IMAGES" != '[]' ] && echo true || echo false )" >> "$GITHUB_OUTPUT"
 
