@@ -39,13 +39,13 @@ jobs:
           CHANGED=$(git diff --name-only HEAD^ HEAD 2>/dev/null || git ls-tree --name-only -r HEAD)
 
           # Detect changed images (images/<name>/*) - only dirs with a Dockerfile
-          IMAGES=$(echo "$CHANGED" | grep '^images/' | cut -d/ -f2 | sort -u | while read dir; do
-            [ -f "images/$dir/Dockerfile" ] && echo "$dir"
+          IMAGES=$( (echo "$CHANGED" | grep '^images/' || true) | cut -d/ -f2 | sort -u | while read -r dir; do
+            [ -n "$dir" ] && [ -f "images/$dir/Dockerfile" ] && echo "$dir"
           done | jq -R . | jq -sc .)
 
           # Detect changed charts (charts/<name>/*) - only dirs with a Chart.yaml
-          CHARTS=$(echo "$CHANGED" | grep '^charts/' | cut -d/ -f2 | sort -u | while read dir; do
-            [ -f "charts/$dir/Chart.yaml" ] && echo "$dir"
+          CHARTS=$( (echo "$CHANGED" | grep '^charts/' || true) | cut -d/ -f2 | sort -u | while read -r dir; do
+            [ -n "$dir" ] && [ -f "charts/$dir/Chart.yaml" ] && echo "$dir"
           done | jq -R . | jq -sc .)
 
           echo "images=$IMAGES" >> $GITHUB_OUTPUT
