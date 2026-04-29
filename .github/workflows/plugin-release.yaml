@@ -306,7 +306,10 @@ jobs:
       - name: Update plugin.yaml version
         shell: bash
         run: |
-          sed -i "s/^  version:.*/  version: ${{ needs.version.outputs.version }}/" template/plugin.yaml
+          VERSION="${{ needs.version.outputs.version }}"
+          sed -i "s/^  version:.*/  version: $VERSION/" template/plugin.yaml
+          # Replace :latest with actual version in chart references
+          sed -i "s/:latest$/:$VERSION/" template/plugin.yaml
 
       - name: Login to registry
         uses: docker/login-action@v3
