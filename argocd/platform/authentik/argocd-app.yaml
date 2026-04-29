@@ -4,16 +4,19 @@ metadata:
   name: authentik
   namespace: argocd
   annotations:
-    # Wave 1: Platform core
     argocd.argoproj.io/sync-wave: "1"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
-    repoURL: ${GIT_BASE_URL}/kuberse-helm
-    targetRevision: main
-    path: helm/platform/authentik
+    chart: platform
+    repoURL: oci://${REGISTRY_URL}/kuberse/helm
+    targetRevision: ${PLATFORM_VERSION}
+    helm:
+      values: |
+        authentik:
+          enabled: true
   destination:
     server: https://kubernetes.default.svc
     namespace: platform

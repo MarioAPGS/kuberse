@@ -4,16 +4,19 @@ metadata:
   name: kuberse-api
   namespace: argocd
   annotations:
-    # Wave 1: Platform core
     argocd.argoproj.io/sync-wave: "1"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
-    repoURL: ${GIT_BASE_URL}/kuberse-api
-    targetRevision: main
-    path: helm/kuberse-api
+    chart: platform
+    repoURL: oci://${REGISTRY_URL}/kuberse/helm
+    targetRevision: ${PLATFORM_VERSION}
+    helm:
+      values: |
+        kuberse-api:
+          enabled: true
   destination:
     server: https://kubernetes.default.svc
     namespace: platform

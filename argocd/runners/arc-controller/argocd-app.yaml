@@ -4,16 +4,19 @@ metadata:
   name: arc-controller
   namespace: argocd
   annotations:
-    # Wave 2: Core platform operator - installs CRDs + controller manager
     argocd.argoproj.io/sync-wave: "2"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
-    repoURL: ${GIT_BASE_URL}/kuberse-helm
-    path: helm/runners/arc-controller
-    targetRevision: main
+    chart: runners
+    repoURL: oci://${REGISTRY_URL}/kuberse/helm
+    targetRevision: ${RUNNERS_VERSION}
+    helm:
+      values: |
+        arc-controller:
+          enabled: true
   destination:
     server: https://kubernetes.default.svc
     namespace: runners
