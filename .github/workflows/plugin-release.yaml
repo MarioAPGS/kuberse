@@ -8,11 +8,11 @@ on:
         type: string
         required: true
       registry-charts:
-        description: OCI registry URL for charts (e.g. oci://ghcr.io/org/plugin-name/charts)
+        description: OCI registry URL for charts (e.g. oci://ghcr.io/org/plugin-name-plugin/charts)
         type: string
         required: true
       registry-manifest:
-        description: OCI manifest artifact URL (e.g. ghcr.io/org/plugin-manifest)
+        description: OCI manifest artifact URL (e.g. ghcr.io/org/plugin-name-plugin)
         type: string
         required: true
       registry-user:
@@ -110,10 +110,77 @@ jobs:
           echo "version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
           echo "Bump: $BUMP | $PREV_VERSION -> $NEW_VERSION"
 
-  # ── Build and push charts ──
-  build-charts:
+  # ── Detect what changed since last tag ──
+  changes:
     needs: version
     if: needs.version.outputs.bump != 'none'
+    runs-on: ubuntu-latest
+    outputs:
+      charts: ${{ steps.detect.outputs.charts }}
+      images: ${{ steps.detect.outputs.images }}
+      has-charts: ${{ steps.detect.outputs.has-charts }}
+      has-images: ${{ steps.detect.outputs.has-images }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed apps
+        id: detect
+        shell: bash
+        run: |
+          PREV_TAG="${{ needs.version.outputs.prev-tag }}"
+
+          # Get changed files since last tag (or all files if no tag)
+          if [ -n "$PREV_TAG" ]; then
+            CHANGED=$(git diff --name-only "$PREV_TAG"..HEAD)
+          else
+            CHANGED=$(git ls-files)
+          fi
+
+          # Detect charts with changes in src/<app>/chart/
+          CHARTS='[]'
+          if [ -d src ]; then
+            for app_dir in src/*/; do
+              app=$(basename "$app_dir")
+              if [ -d "src/$app/chart" ] && echo "$CHANGED" | grep -q "^src/$app/chart/"; then
+                CHARTS=$(echo "$CHARTS" | jq --arg a "$app" '. + [$a]')
+              fi
+            done
+          fi
+
+          # Detect images with changes in src/<app>/containers/
+          IMAGES='[]'
+          if [ -d src ]; then
+            for app_dir in src/*/; do
+              app=$(basename "$app_dir")
+              if [ -d "src/$app/containers" ] && echo "$CHANGED" | grep -q "^src/$app/containers/"; then
+                # Each subfolder in containers/ is an image
+                for img_dir in src/$app/containers/*/; do
+                  if [ -d "$img_dir" ]; then
+                    img=$(basename "$img_dir")
+                    if echo "$CHANGED" | grep -q "^src/$app/containers/$img/"; then
+                      IMAGES=$(echo "$IMAGES" | jq --arg a "$app/$img" '. + [$a]')
+                    fi
+                  fi
+                done
+              fi
+            done
+          fi
+
+          echo "charts=$CHARTS" >> "$GITHUB_OUTPUT"
+          echo "images=$IMAGES" >> "$GITHUB_OUTPUT"
+          echo "has-charts=$( [ "$CHARTS" != '[]' ] && echo true || echo false )" >> "$GITHUB_OUTPUT"
+          echo "has-images=$( [ "$IMAGES" != '[]' ] && echo true || echo false )" >> "$GITHUB_OUTPUT"
+          echo "Charts to build: $CHARTS"
+          echo "Images to build: $IMAGES"
+
+  # ── Build and push charts (only changed) ──
+  build-charts:
+    needs: [version, changes]
+    if: needs.changes.outputs.has-charts == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -121,47 +188,39 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Find charts
-        id: find
-        shell: bash
-        run: |
-          if [ -d charts ]; then
-            CHARTS=$(find charts/ -name Chart.yaml -exec dirname {} \; | jq -R . | jq -sc .)
-          else
-            CHARTS='[]'
-          fi
-          echo "charts=$CHARTS" >> "$GITHUB_OUTPUT"
-          echo "has-charts=$( [ "$CHARTS" != '[]' ] && echo true || echo false )" >> "$GITHUB_OUTPUT"
-
       - name: Build and push charts
-        if: steps.find.outputs.has-charts == 'true'
         shell: bash
         env:
           REGISTRY: ${{ inputs.registry-charts }}
           USER: ${{ inputs.registry-user }}
           PASSWORD: ${{ secrets.registry-password }}
+          VERSION: ${{ needs.version.outputs.version }}
         run: |
           REGISTRY_HOST=$(echo "$REGISTRY" | sed 's|oci://||' | cut -d/ -f1)
           echo "$PASSWORD" | helm registry login "$REGISTRY_HOST" -u "$USER" --password-stdin
 
-          for chart_dir in $(echo '${{ steps.find.outputs.charts }}' | jq -r '.[]'); do
+          for app in $(echo '${{ needs.changes.outputs.charts }}' | jq -r '.[]'); do
+            chart_dir="src/$app/chart"
             NAME=$(grep '^name:' "$chart_dir/Chart.yaml" | awk '{print $2}')
-            VERSION=$(grep '^version:' "$chart_dir/Chart.yaml" | awk '{print $2}')
+
+            # Set version to global version
+            sed -i "s/^version:.*/version: $VERSION/" "$chart_dir/Chart.yaml"
 
             if grep -q '^dependencies:' "$chart_dir/Chart.yaml" 2>/dev/null; then
               helm dependency update "$chart_dir/"
             fi
 
             helm package "$chart_dir/"
+            # Push with version tag
             helm push "${NAME}-${VERSION}.tgz" "$REGISTRY"
             rm -f "${NAME}-${VERSION}.tgz"
             echo "Pushed $NAME:$VERSION"
           done
 
-  # ── Build and push images ──
+  # ── Build and push images (only changed) ──
   build-images:
-    needs: version
-    if: needs.version.outputs.bump != 'none'
+    needs: [version, changes]
+    if: needs.changes.outputs.has-images == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -169,24 +228,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Find images
-        id: find
-        shell: bash
-        run: |
-          if [ -d images ]; then
-            IMAGES=$(find images/ -name Dockerfile -exec dirname {} \; | xargs -I{} basename {} | jq -R . | jq -sc .)
-          else
-            IMAGES='[]'
-          fi
-          echo "images=$IMAGES" >> "$GITHUB_OUTPUT"
-          echo "has-images=$( [ "$IMAGES" != '[]' ] && echo true || echo false )" >> "$GITHUB_OUTPUT"
-
       - name: Set up Docker Buildx
-        if: steps.find.outputs.has-images == 'true'
         uses: docker/setup-buildx-action@v3
 
       - name: Login to registry
-        if: steps.find.outputs.has-images == 'true'
         uses: docker/login-action@v3
         with:
           registry: ${{ inputs.registry-images }}
@@ -194,21 +239,24 @@ jobs:
           password: ${{ secrets.registry-password }}
 
       - name: Build and push images
-        if: steps.find.outputs.has-images == 'true'
         shell: bash
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
         run: |
-          for img in $(echo '${{ steps.find.outputs.images }}' | jq -r '.[]'); do
+          for entry in $(echo '${{ needs.changes.outputs.images }}' | jq -r '.[]'); do
+            app=$(echo "$entry" | cut -d/ -f1)
+            img=$(echo "$entry" | cut -d/ -f2)
             docker buildx build \
               --push \
+              --tag "${{ inputs.registry-images }}/$img:$VERSION" \
               --tag "${{ inputs.registry-images }}/$img:latest" \
-              --tag "${{ inputs.registry-images }}/$img:${{ needs.version.outputs.version }}" \
-              "images/$img/"
-            echo "Pushed $img:${{ needs.version.outputs.version }}"
+              "src/$app/containers/$img/"
+            echo "Pushed $img:$VERSION + latest"
           done
 
-  # ── Publish manifest artifact + create git tag ──
+  # ── Publish template as OCI artifact + create git tag ──
   publish:
-    needs: [version, build-charts, build-images]
+    needs: [version, changes, build-charts, build-images]
     if: |
       always() &&
       needs.version.outputs.bump != 'none' &&
@@ -223,7 +271,7 @@ jobs:
       - name: Update plugin.yaml version
         shell: bash
         run: |
-          sed -i "s/^  version:.*/  version: ${{ needs.version.outputs.version }}/" plugin.yaml
+          sed -i "s/^  version:.*/  version: ${{ needs.version.outputs.version }}/" template/plugin.yaml
 
       - name: Login to registry
         uses: docker/login-action@v3
@@ -235,16 +283,13 @@ jobs:
       - name: Install ORAS
         uses: oras-project/setup-oras@v1
 
-      - name: Push manifest artifact (version + latest)
+      - name: Push template as OCI artifact (version + latest)
         shell: bash
+        working-directory: template
         run: |
-          oras push "${{ inputs.registry-manifest }}:${{ needs.version.outputs.version }}" \
-            plugin.yaml \
-            manifests/
-          oras push "${{ inputs.registry-manifest }}:latest" \
-            plugin.yaml \
-            manifests/
-          echo "Published manifest: ${{ needs.version.outputs.version }} + latest"
+          oras push "${{ inputs.registry-manifest }}:${{ needs.version.outputs.version }}" .
+          oras push "${{ inputs.registry-manifest }}:latest" .
+          echo "Published template: ${{ needs.version.outputs.version }} + latest"
 
       - name: Create and push git tag
         shell: bash
