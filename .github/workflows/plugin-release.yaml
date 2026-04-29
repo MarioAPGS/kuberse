@@ -149,13 +149,13 @@ jobs:
               for app_dir in src/*/; do
                 app=$(basename "$app_dir")
                 if [ -d "src/$app/chart" ]; then
-                  CHARTS=$(echo "$CHARTS" | jq --arg a "$app" '. + [$a]')
+                  CHARTS=$(echo "$CHARTS" | jq -c --arg a "$app" '. + [$a]')
                 fi
                 if [ -d "src/$app/containers" ]; then
                   for img_dir in src/$app/containers/*/; do
                     if [ -d "$img_dir" ]; then
                       img=$(basename "$img_dir")
-                      IMAGES=$(echo "$IMAGES" | jq --arg a "$app/$img" '. + [$a]')
+                      IMAGES=$(echo "$IMAGES" | jq -c --arg a "$app/$img" '. + [$a]')
                     fi
                   done
                 fi
@@ -181,7 +181,7 @@ jobs:
             for app_dir in src/*/; do
               app=$(basename "$app_dir")
               if [ -d "src/$app/chart" ] && echo "$CHANGED" | grep -q "^src/$app/chart/"; then
-                CHARTS=$(echo "$CHARTS" | jq --arg a "$app" '. + [$a]')
+                CHARTS=$(echo "$CHARTS" | jq -c --arg a "$app" '. + [$a]')
               fi
             done
           fi
@@ -195,7 +195,7 @@ jobs:
                   if [ -d "$img_dir" ]; then
                     img=$(basename "$img_dir")
                     if echo "$CHANGED" | grep -q "^src/$app/containers/$img/"; then
-                      IMAGES=$(echo "$IMAGES" | jq --arg a "$app/$img" '. + [$a]')
+                      IMAGES=$(echo "$IMAGES" | jq -c --arg a "$app/$img" '. + [$a]')
                     fi
                   fi
                 done
