@@ -19,13 +19,18 @@ on:
         description: Registry username
         type: string
         required: true
+      force-rebuild:
+        description: Force rebuild of all artifacts without creating a new tag
+        type: boolean
+        required: false
+        default: false
     secrets:
       registry-password:
         description: Registry password or token
         required: true
 
 jobs:
-  # ── Determine next semantic version from conventional commits ──
+  # ── Determine version ──
   version:
     runs-on: ubuntu-latest
     outputs:
@@ -39,11 +44,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Compute next semantic version
+      - name: Compute version
         id: semver
         shell: bash
         run: |
-          # Find the latest semver tag
           PREV_TAG=$(git tag -l 'v*' --sort=-v:refname | head -1)
           if [ -z "$PREV_TAG" ]; then
             PREV_TAG=""
@@ -54,10 +58,16 @@ jobs:
 
           echo "prev-tag=$PREV_TAG" >> "$GITHUB_OUTPUT"
 
-          # Parse previous version
+          # If force-rebuild, use current version and skip bump
+          if [ "${{ inputs.force-rebuild }}" = "true" ]; then
+            echo "bump=rebuild" >> "$GITHUB_OUTPUT"
+            echo "version=$PREV_VERSION" >> "$GITHUB_OUTPUT"
+            echo "Force rebuild: using version $PREV_VERSION"
+            exit 0
+          fi
+
           IFS='.' read -r MAJOR MINOR PATCH <<< "$PREV_VERSION"
 
-          # Analyze commits since last tag
           if [ -n "$PREV_TAG" ]; then
             COMMITS=$(git log "$PREV_TAG"..HEAD --format="%s")
           else
@@ -71,7 +81,6 @@ jobs:
             exit 0
           fi
 
-          # Determine bump type from conventional commits
           BUMP="none"
           while IFS= read -r msg; do
             case "$msg" in
@@ -95,10 +104,8 @@ jobs:
             done <<< "$COMMITS"
           fi
 
-          # If still none (e.g. docs/chore only), default to patch
           [ "$BUMP" = "none" ] && BUMP="patch"
 
-          # Bump version
           case "$BUMP" in
             major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
             minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
@@ -131,16 +138,44 @@ jobs:
         id: detect
         shell: bash
         run: |
+          FORCE="${{ inputs.force-rebuild }}"
           PREV_TAG="${{ needs.version.outputs.prev-tag }}"
 
-          # Get changed files since last tag (or all files if no tag)
+          # Force rebuild: include ALL charts and images
+          if [ "$FORCE" = "true" ]; then
+            CHARTS='[]'
+            IMAGES='[]'
+            if [ -d src ]; then
+              for app_dir in src/*/; do
+                app=$(basename "$app_dir")
+                if [ -d "src/$app/chart" ]; then
+                  CHARTS=$(echo "$CHARTS" | jq --arg a "$app" '. + [$a]')
+                fi
+                if [ -d "src/$app/containers" ]; then
+                  for img_dir in src/$app/containers/*/; do
+                    if [ -d "$img_dir" ]; then
+                      img=$(basename "$img_dir")
+                      IMAGES=$(echo "$IMAGES" | jq --arg a "$app/$img" '. + [$a]')
+                    fi
+                  done
+                fi
+              done
+            fi
+            echo "charts=$CHARTS" >> "$GITHUB_OUTPUT"
+            echo "images=$IMAGES" >> "$GITHUB_OUTPUT"
+            echo "has-charts=$( [ "$CHARTS" != '[]' ] && echo true || echo false )" >> "$GITHUB_OUTPUT"
+            echo "has-images=$( [ "$IMAGES" != '[]' ] && echo true || echo false )" >> "$GITHUB_OUTPUT"
+            echo "Force rebuild ALL — Charts: $CHARTS | Images: $IMAGES"
+            exit 0
+          fi
+
+          # Normal mode: detect changes via git diff
           if [ -n "$PREV_TAG" ]; then
             CHANGED=$(git diff --name-only "$PREV_TAG"..HEAD)
           else
             CHANGED=$(git ls-files)
           fi
 
-          # Detect charts with changes in src/<app>/chart/
           CHARTS='[]'
           if [ -d src ]; then
             for app_dir in src/*/; do
@@ -151,13 +186,11 @@ jobs:
             done
           fi
 
-          # Detect images with changes in src/<app>/containers/
           IMAGES='[]'
           if [ -d src ]; then
             for app_dir in src/*/; do
               app=$(basename "$app_dir")
               if [ -d "src/$app/containers" ] && echo "$CHANGED" | grep -q "^src/$app/containers/"; then
-                # Each subfolder in containers/ is an image
                 for img_dir in src/$app/containers/*/; do
                   if [ -d "$img_dir" ]; then
                     img=$(basename "$img_dir")
@@ -177,7 +210,7 @@ jobs:
           echo "Charts to build: $CHARTS"
           echo "Images to build: $IMAGES"
 
-  # ── Build and push charts (only changed) ──
+  # ── Build and push charts (only changed or all on force) ──
   build-charts:
     needs: [version, changes]
     if: needs.changes.outputs.has-charts == 'true'
@@ -211,13 +244,12 @@ jobs:
             fi
 
             helm package "$chart_dir/"
-            # Push with version tag
             helm push "${NAME}-${VERSION}.tgz" "$REGISTRY"
             rm -f "${NAME}-${VERSION}.tgz"
             echo "Pushed $NAME:$VERSION"
           done
 
-  # ── Build and push images (only changed) ──
+  # ── Build and push images (only changed or all on force) ──
   build-images:
     needs: [version, changes]
     if: needs.changes.outputs.has-images == 'true'
@@ -292,6 +324,7 @@ jobs:
           echo "Published template: ${{ needs.version.outputs.version }} + latest"
 
       - name: Create and push git tag
+        if: inputs.force-rebuild == false
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
