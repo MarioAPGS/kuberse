@@ -215,45 +215,49 @@ jobs:
     needs: [version, changes]
     if: needs.changes.outputs.has-charts == 'true'
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        chart: ${{ fromJson(needs.changes.outputs.charts) }}
     permissions:
       contents: read
       packages: write
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build and push charts
+      - name: Build and push chart
         shell: bash
         env:
           REGISTRY: ${{ inputs.registry-charts }}
           USER: ${{ inputs.registry-user }}
           PASSWORD: ${{ secrets.registry-password }}
           VERSION: ${{ needs.version.outputs.version }}
+          APP: ${{ matrix.chart }}
         run: |
           REGISTRY_HOST=$(echo "$REGISTRY" | sed 's|oci://||' | cut -d/ -f1)
           echo "$PASSWORD" | helm registry login "$REGISTRY_HOST" -u "$USER" --password-stdin
 
-          for app in $(echo '${{ needs.changes.outputs.charts }}' | jq -r '.[]'); do
-            chart_dir="src/$app/chart"
-            NAME=$(grep '^name:' "$chart_dir/Chart.yaml" | awk '{print $2}')
+          chart_dir="src/$APP/chart"
+          NAME=$(grep '^name:' "$chart_dir/Chart.yaml" | awk '{print $2}')
 
-            # Set version to global version
-            sed -i "s/^version:.*/version: $VERSION/" "$chart_dir/Chart.yaml"
+          sed -i "s/^version:.*/version: $VERSION/" "$chart_dir/Chart.yaml"
 
-            if grep -q '^dependencies:' "$chart_dir/Chart.yaml" 2>/dev/null; then
-              helm dependency update "$chart_dir/"
-            fi
+          if grep -q '^dependencies:' "$chart_dir/Chart.yaml" 2>/dev/null; then
+            helm dependency update "$chart_dir/"
+          fi
 
-            helm package "$chart_dir/"
-            helm push "${NAME}-${VERSION}.tgz" "$REGISTRY"
-            rm -f "${NAME}-${VERSION}.tgz"
-            echo "Pushed $NAME:$VERSION"
-          done
+          helm package "$chart_dir/"
+          helm push "${NAME}-${VERSION}.tgz" "$REGISTRY"
+          rm -f "${NAME}-${VERSION}.tgz"
+          echo "Pushed $NAME:$VERSION"
 
   # ── Build and push images (only changed or all on force) ──
   build-images:
     needs: [version, changes]
     if: needs.changes.outputs.has-images == 'true'
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        image: ${{ fromJson(needs.changes.outputs.images) }}
     permissions:
       contents: read
       packages: write
@@ -270,21 +274,20 @@ jobs:
           username: ${{ inputs.registry-user }}
           password: ${{ secrets.registry-password }}
 
-      - name: Build and push images
+      - name: Build and push image
         shell: bash
         env:
           VERSION: ${{ needs.version.outputs.version }}
+          ENTRY: ${{ matrix.image }}
         run: |
-          for entry in $(echo '${{ needs.changes.outputs.images }}' | jq -r '.[]'); do
-            app=$(echo "$entry" | cut -d/ -f1)
-            img=$(echo "$entry" | cut -d/ -f2)
-            docker buildx build \
-              --push \
-              --tag "${{ inputs.registry-images }}/$img:$VERSION" \
-              --tag "${{ inputs.registry-images }}/$img:latest" \
-              "src/$app/containers/$img/"
-            echo "Pushed $img:$VERSION + latest"
-          done
+          app=$(echo "$ENTRY" | cut -d/ -f1)
+          img=$(echo "$ENTRY" | cut -d/ -f2)
+          docker buildx build \
+            --push \
+            --tag "${{ inputs.registry-images }}/$img:$VERSION" \
+            --tag "${{ inputs.registry-images }}/$img:latest" \
+            "src/$app/containers/$img/"
+          echo "Pushed $img:$VERSION + latest"
 
   # ── Publish template as OCI artifact + create git tag ──
   publish:
