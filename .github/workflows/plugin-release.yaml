@@ -148,7 +148,7 @@ jobs:
             NAME=$(grep '^name:' "$chart_dir/Chart.yaml" | awk '{print $2}')
             VERSION=$(grep '^version:' "$chart_dir/Chart.yaml" | awk '{print $2}')
 
-            if [ -f "$chart_dir/Chart.lock" ]; then
+            if grep -q '^dependencies:' "$chart_dir/Chart.yaml" 2>/dev/null; then
               helm dependency update "$chart_dir/"
             fi
 
