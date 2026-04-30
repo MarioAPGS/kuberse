@@ -232,7 +232,6 @@ jobs:
           REGISTRY: ${{ inputs.registry-charts }}
           USER: ${{ inputs.registry-user }}
           PASSWORD: ${{ secrets.registry-password }}
-          VERSION: ${{ needs.version.outputs.version }}
           APP: ${{ matrix.chart }}
         run: |
           REGISTRY_HOST=$(echo "$REGISTRY" | sed 's|oci://||' | cut -d/ -f1)
@@ -241,23 +240,26 @@ jobs:
 
           chart_dir="src/$APP/chart"
           NAME=$(grep '^name:' "$chart_dir/Chart.yaml" | awk '{print $2}')
-
-          sed -i "s/^version:.*/version: $VERSION/" "$chart_dir/Chart.yaml"
+          # Each chart is versioned independently from the plugin. The plugin
+          # manifest references each chart by its own Chart.yaml version, which
+          # keeps both producer and consumer in sync without having to bump the
+          # chart on every plugin release.
+          CHART_VERSION=$(grep '^version:' "$chart_dir/Chart.yaml" | awk '{print $2}' | tr -d '"')
 
           if grep -q '^dependencies:' "$chart_dir/Chart.yaml" 2>/dev/null; then
             helm dependency update "$chart_dir/"
           fi
 
           helm package "$chart_dir/"
-          helm push "${NAME}-${VERSION}.tgz" "$REGISTRY"
-          rm -f "${NAME}-${VERSION}.tgz"
+          helm push "${NAME}-${CHART_VERSION}.tgz" "$REGISTRY"
+          rm -f "${NAME}-${CHART_VERSION}.tgz"
 
           # Re-tag pushed chart as `latest` so consumers can pull a stable
           # mutable tag without pinning a specific version.
           REGISTRY_PATH=$(echo "$REGISTRY" | sed 's|oci://||')
-          oras tag "${REGISTRY_PATH}/${NAME}:${VERSION}" latest
+          oras tag "${REGISTRY_PATH}/${NAME}:${CHART_VERSION}" latest
 
-          echo "Pushed $NAME:$VERSION + latest"
+          echo "Pushed $NAME:$CHART_VERSION + latest"
 
   # ── Build and push images (only changed or all on force) ──
   build-images:
