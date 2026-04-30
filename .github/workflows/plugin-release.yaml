@@ -224,6 +224,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: oras-project/setup-oras@v1
+
       - name: Build and push chart
         shell: bash
         env:
@@ -235,6 +237,7 @@ jobs:
         run: |
           REGISTRY_HOST=$(echo "$REGISTRY" | sed 's|oci://||' | cut -d/ -f1)
           echo "$PASSWORD" | helm registry login "$REGISTRY_HOST" -u "$USER" --password-stdin
+          echo "$PASSWORD" | oras login "$REGISTRY_HOST" -u "$USER" --password-stdin
 
           chart_dir="src/$APP/chart"
           NAME=$(grep '^name:' "$chart_dir/Chart.yaml" | awk '{print $2}')
@@ -248,7 +251,13 @@ jobs:
           helm package "$chart_dir/"
           helm push "${NAME}-${VERSION}.tgz" "$REGISTRY"
           rm -f "${NAME}-${VERSION}.tgz"
-          echo "Pushed $NAME:$VERSION"
+
+          # Re-tag pushed chart as `latest` so consumers can pull a stable
+          # mutable tag without pinning a specific version.
+          REGISTRY_PATH=$(echo "$REGISTRY" | sed 's|oci://||')
+          oras tag "${REGISTRY_PATH}/${NAME}:${VERSION}" latest
+
+          echo "Pushed $NAME:$VERSION + latest"
 
   # ── Build and push images (only changed or all on force) ──
   build-images:
