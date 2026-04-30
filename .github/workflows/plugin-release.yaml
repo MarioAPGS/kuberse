@@ -317,8 +317,46 @@ jobs:
         run: |
           VERSION="${{ needs.version.outputs.version }}"
           sed -i "s/^  version:.*/  version: $VERSION/" template/plugin.yaml
-          # Replace :latest with actual version in chart references
-          sed -i "s/:latest$/:$VERSION/" template/plugin.yaml
+
+          # Replace :latest in chart references with the real version of each
+          # chart, read from its src/<name>/chart/Chart.yaml. Image references
+          # keep :latest because images always publish a :latest tag on release.
+          # This avoids the desync where the plugin bumps to a new version but
+          # a chart wasn't republished and the manifest points to a missing
+          # chart:VERSION tag.
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          plugin = Path("template/plugin.yaml")
+          text = plugin.read_text()
+
+          # Match chart refs like:
+          #   oci://ghcr.io/<owner>/<plugin>/charts/<name>:latest
+          chart_pattern = re.compile(
+              r"(oci://[^\s]+/charts/([A-Za-z0-9._-]+)):latest"
+          )
+
+          def resolve(match: re.Match) -> str:
+              base, name = match.group(1), match.group(2)
+              chart_yaml = Path(f"src/{name}/chart/Chart.yaml")
+              if not chart_yaml.exists():
+                  print(f"WARN: {chart_yaml} not found; leaving :latest for {name}")
+                  return match.group(0)
+              for line in chart_yaml.read_text().splitlines():
+                  if line.startswith("version:"):
+                      ver = line.split(":", 1)[1].strip().strip('"').strip("'")
+                      print(f"Resolved {name}: latest -> {ver}")
+                      return f"{base}:{ver}"
+              print(f"WARN: no version field in {chart_yaml}; leaving :latest")
+              return match.group(0)
+
+          new_text = chart_pattern.sub(resolve, text)
+          plugin.write_text(new_text)
+          PY
+
+          echo "--- Updated plugin.yaml ---"
+          cat template/plugin.yaml
 
       - name: Login to registry
         uses: docker/login-action@v3
