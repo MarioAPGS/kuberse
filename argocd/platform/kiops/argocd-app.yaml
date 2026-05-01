@@ -18,7 +18,7 @@ spec:
         kiops:
           enabled: true
           image:
-            repository: ${REGISTRY_URL}/kuberse/img/kiops
+            repository: ${REGISTRY_URL}/kuberse/kuberse/img/kiops
             pullPolicy: IfNotPresent
   destination:
     server: https://kubernetes.default.svc

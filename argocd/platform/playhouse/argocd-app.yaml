@@ -18,7 +18,7 @@ spec:
         playhouse:
           enabled: true
           image:
-            repository: ${REGISTRY_URL}/kuberse/img/playhouse-kit
+            repository: ${REGISTRY_URL}/kuberse/kuberse/img/playhouse-kit
             pullPolicy: IfNotPresent
   destination:
     server: https://kubernetes.default.svc

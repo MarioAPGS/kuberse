@@ -18,7 +18,7 @@ spec:
         kuberse-api:
           enabled: true
           image:
-            repository: ${REGISTRY_URL}/kuberse/img/kuberse-api
+            repository: ${REGISTRY_URL}/kuberse/kuberse/img/kuberse-api
             pullPolicy: IfNotPresent
   destination:
     server: https://kubernetes.default.svc
