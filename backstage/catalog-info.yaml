@@ -6,7 +6,7 @@ metadata:
   annotations:
     backstage.io/techdocs-ref: dir:.
   links:
-    - url: ${GIT_BASE_URL}/kuberse-registry
+    - url: ${GIT_BASE_URL}/kuberse
       title: Registry Repo
 spec:
   owner: group:default/admins
@@ -16,8 +16,20 @@ apiVersion: backstage.io/v1alpha1
 kind: Location
 metadata:
   name: kuberse-platform
-  description: Kuberse platform -- all systems and infrastructure components
+  description: Kuberse platform -- all systems, plugins, and infrastructure components
 spec:
   targets:
     - ./platform/**/catalog-info.yaml
     - ./runners/**/catalog-info.yaml
+    - ./plugins/**/catalog-info.yaml
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Location
+metadata:
+  name: kuberse-org
+  description: Kuberse organisation -- users and groups
+spec:
+  type: file
+  targets:
+    - ./org.yaml
