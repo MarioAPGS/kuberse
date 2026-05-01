@@ -1,6 +1,0 @@
-template:
-  spec:
-    containers:
-      - name: runner
-        image: ${REGISTRY_URL}/kuberse/img/kuberse-runner:latest
-        imagePullPolicy: IfNotPresent

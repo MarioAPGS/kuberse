@@ -17,6 +17,12 @@ spec:
       values: |
         arc-runners:
           enabled: true
+          template:
+            spec:
+              containers:
+                - name: runner
+                  image: ${REGISTRY_URL}/kuberse/img/kuberse-runner:latest
+                  imagePullPolicy: IfNotPresent
   destination:
     server: https://kubernetes.default.svc
     namespace: runners

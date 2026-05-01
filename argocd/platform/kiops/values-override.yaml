@@ -1,3 +1,0 @@
-image:
-  repository: ${REGISTRY_URL}/kuberse/img/kiops
-  pullPolicy: IfNotPresent
