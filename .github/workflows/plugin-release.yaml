@@ -247,6 +247,20 @@ jobs:
           CHART_VERSION=$(grep '^version:' "$chart_dir/Chart.yaml" | awk '{print $2}' | tr -d '"')
 
           if grep -q '^dependencies:' "$chart_dir/Chart.yaml" 2>/dev/null; then
+            # Recurse into vendored subcharts first so that umbrella charts with
+            # subcharts that themselves declare external dependencies get their
+            # transitive `charts/*.tgz` materialised before the umbrella is
+            # packaged. Without this, `helm package` on the umbrella silently
+            # ships a subchart whose own dependencies are missing.
+            if [ -d "$chart_dir/charts" ]; then
+              for sub in "$chart_dir"/charts/*/; do
+                [ -d "$sub" ] || continue
+                if [ -f "$sub/Chart.yaml" ] && grep -q '^dependencies:' "$sub/Chart.yaml" 2>/dev/null; then
+                  echo "Updating dependencies for subchart: $sub"
+                  helm dependency update "$sub"
+                fi
+              done
+            fi
             helm dependency update "$chart_dir/"
           fi
 
