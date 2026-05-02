@@ -10,7 +10,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: ${GIT_BASE_URL}/kuberse-registry
+    repoURL: ${GIT_BASE_URL}/${ORG_NAME}
     targetRevision: main
     path: argocd/runners
     directory:
