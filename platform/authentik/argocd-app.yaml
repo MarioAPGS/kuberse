@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: playhouse
+  name: authentik
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -15,11 +15,8 @@ spec:
     targetRevision: ${PLATFORM_VERSION}
     helm:
       values: |
-        playhouse:
+        authentik:
           enabled: true
-          image:
-            repository: ${REGISTRY_URL}/kuberse/kuberse/img/playhouse-kit
-            pullPolicy: IfNotPresent
   destination:
     server: https://kubernetes.default.svc
     namespace: platform
@@ -29,15 +26,10 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - ServerSideApply=true
     retry:
       limit: 5
       backoff:
         duration: 5s
         factor: 2
         maxDuration: 3m
-  ignoreDifferences:
-    - group: ""
-      kind: Service
-      jsonPointers:
-        - /spec/clusterIP
-        - /spec/clusterIPs

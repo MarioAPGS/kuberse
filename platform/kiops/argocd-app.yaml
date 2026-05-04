@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: postgres
+  name: kiops
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -15,8 +15,11 @@ spec:
     targetRevision: ${PLATFORM_VERSION}
     helm:
       values: |
-        postgres:
+        kiops:
           enabled: true
+          image:
+            repository: ${REGISTRY_URL}/kuberse/kuberse/img/kiops
+            pullPolicy: IfNotPresent
   destination:
     server: https://kubernetes.default.svc
     namespace: platform
@@ -26,6 +29,7 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - ServerSideApply=true
     retry:
       limit: 5
       backoff:

@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: kuberse-api
+  name: playhouse
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -15,10 +15,10 @@ spec:
     targetRevision: ${PLATFORM_VERSION}
     helm:
       values: |
-        kuberse-api:
+        playhouse:
           enabled: true
           image:
-            repository: ${REGISTRY_URL}/kuberse/kuberse/img/kuberse-api
+            repository: ${REGISTRY_URL}/kuberse/kuberse/img/playhouse-kit
             pullPolicy: IfNotPresent
   destination:
     server: https://kubernetes.default.svc
@@ -29,6 +29,7 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - ServerSideApply=true
     retry:
       limit: 5
       backoff:

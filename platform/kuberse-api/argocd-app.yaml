@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: kiops
+  name: kuberse-api
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -15,10 +15,10 @@ spec:
     targetRevision: ${PLATFORM_VERSION}
     helm:
       values: |
-        kiops:
+        kuberse-api:
           enabled: true
           image:
-            repository: ${REGISTRY_URL}/kuberse/kuberse/img/kiops
+            repository: ${REGISTRY_URL}/kuberse/kuberse/img/kuberse-api
             pullPolicy: IfNotPresent
   destination:
     server: https://kubernetes.default.svc
@@ -29,9 +29,16 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - ServerSideApply=true
     retry:
       limit: 5
       backoff:
         duration: 5s
         factor: 2
         maxDuration: 3m
+  ignoreDifferences:
+    - group: ""
+      kind: Service
+      jsonPointers:
+        - /spec/clusterIP
+        - /spec/clusterIPs

@@ -1,21 +1,22 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: bootstrap-runners
+  name: argocd-config
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-wave: "1"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
-    repoURL: ${GIT_BASE_URL}/${ORG_NAME}
-    targetRevision: main
-    path: argocd/runners
-    directory:
-      recurse: true
-      include: "*/argocd-app.yaml"
+    chart: platform
+    repoURL: oci://${REGISTRY_URL}/kuberse/kuberse/helm/platform
+    targetRevision: ${PLATFORM_VERSION}
+    helm:
+      values: |
+        argocd-config:
+          enabled: true
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
@@ -23,9 +24,9 @@ spec:
     automated:
       prune: true
       selfHeal: true
-      allowEmpty: false
     syncOptions:
       - CreateNamespace=true
+      - ServerSideApply=true
     retry:
       limit: 5
       backoff:

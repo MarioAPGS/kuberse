@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: argocd-config
+  name: ingress-nginx
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -15,17 +15,18 @@ spec:
     targetRevision: ${PLATFORM_VERSION}
     helm:
       values: |
-        argocd-config:
+        ingress-nginx:
           enabled: true
   destination:
     server: https://kubernetes.default.svc
-    namespace: argocd
+    namespace: platform
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - ServerSideApply=true
     retry:
       limit: 5
       backoff:

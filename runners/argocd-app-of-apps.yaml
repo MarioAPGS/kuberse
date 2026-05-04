@@ -1,10 +1,10 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: bootstrap-platform
+  name: bootstrap-runners
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "0"
+    argocd.argoproj.io/sync-wave: "2"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -12,10 +12,10 @@ spec:
   source:
     repoURL: ${GIT_BASE_URL}/${ORG_NAME}
     targetRevision: main
-    path: argocd/platform
+    path: runners
     directory:
-      recurse: true
-      include: "*/argocd-app.yaml"
+      recurse: false
+      include: "{*/argocd-app.yaml}"
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
@@ -26,6 +26,7 @@ spec:
       allowEmpty: false
     syncOptions:
       - CreateNamespace=true
+      - ServerSideApply=true
     retry:
       limit: 5
       backoff:
