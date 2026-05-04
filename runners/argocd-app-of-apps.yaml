@@ -14,7 +14,7 @@ spec:
     targetRevision: main
     path: runners
     directory:
-      recurse: false
+      recurse: true
       include: "{*/argocd-app.yaml}"
   destination:
     server: https://kubernetes.default.svc
