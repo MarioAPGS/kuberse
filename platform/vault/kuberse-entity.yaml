@@ -17,6 +17,7 @@ metadata:
     kubernetes-id: vault
     kubernetes-namespace: platform
     kubernetes-label-selector: app.kubernetes.io/name=vault
+    argocd-app: vault
   links:
     - url: https://vault.${BASE_DOMAIN}
       title: Vault UI
@@ -41,6 +42,8 @@ metadata:
     kubernetes-id: vault-init-job
     kubernetes-namespace: platform
     kubernetes-label-selector: job-name=vault-init-job
+    argocd-app: vault
+    argocd-resource: vault-init-job
 spec:
   type: job
   lifecycle: production
@@ -59,6 +62,8 @@ metadata:
     kubernetes-id: vault-secrets-operator
     kubernetes-namespace: platform
     kubernetes-label-selector: app.kubernetes.io/name=vault-secrets-operator
+    argocd-app: vault
+    argocd-resource: vault-secrets-operator
   links:
     - url: https://developer.hashicorp.com/vault/docs/platform/k8s/vso
       title: VSO Docs
@@ -82,6 +87,8 @@ metadata:
     kubernetes-id: vault-module-config
     kubernetes-namespace: platform
     kubernetes-label-selector: app=vault-module-config
+    argocd-app: vault
+    argocd-resource: vault-module-config
 spec:
   type: cronjob
   lifecycle: production

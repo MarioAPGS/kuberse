@@ -15,6 +15,7 @@ metadata:
     kubernetes-id: cloudbeaver
     kubernetes-namespace: platform
     kubernetes-label-selector: app.kubernetes.io/name=cloudbeaver
+    argocd-app: cloudbeaver
   links:
     - url: https://cloudbeaver.${BASE_DOMAIN}
       title: CloudBeaver (DB UI)

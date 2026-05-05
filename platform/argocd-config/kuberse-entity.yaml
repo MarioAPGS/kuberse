@@ -16,6 +16,7 @@ metadata:
     kubernetes-id: argocd-config
     kubernetes-namespace: argocd
     kubernetes-label-selector: app.kubernetes.io/part-of=argocd
+    argocd-app: argocd-config
   links:
     - url: https://argocd.${BASE_DOMAIN}
       title: ArgoCD UI
