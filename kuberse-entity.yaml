@@ -1,0 +1,16 @@
+##
+## Kubrain entity discovery root
+## Locations pointing to all kuberse-entity.yaml files in this repo
+##
+
+---
+kind: Location
+metadata:
+  name: kuberse-platform
+  namespace: default
+  description: Kuberse platform -- all systems and components
+spec:
+  targets:
+    - ./platform/**/kuberse-entity.yaml
+    - ./runners/**/kuberse-entity.yaml
+    - ./plugins/**/kuberse-entity.yaml

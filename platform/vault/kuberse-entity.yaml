@@ -1,0 +1,124 @@
+##
+## Kubrain entity catalog for: platform/vault
+## Translated from Backstage catalog-info.yaml to Kubrain format
+##
+
+---
+kind: System
+metadata:
+  name: vault
+  namespace: platform
+  title: Vault
+  description: >
+    HashiCorp Vault HA cluster (3 replicas, Raft storage). Manages all
+    platform secrets, KV v2 mounts (secret/ and buildapps/),
+    Kubernetes auth, dynamic policy/role creation, and Vault Secrets Operator.
+  annotations:
+    kubernetes-id: vault
+    kubernetes-namespace: platform
+    kubernetes-label-selector: app.kubernetes.io/name=vault
+  links:
+    - url: https://vault.${BASE_DOMAIN}
+      title: Vault UI
+      icon: dashboard
+    - url: https://developer.hashicorp.com/vault/docs
+      title: Vault Docs
+      icon: docs
+spec:
+  type: secrets
+  owner: group:default/admins
+  domain: default/kuberse
+
+---
+kind: Component
+metadata:
+  name: vault-init-job
+  namespace: platform
+  description: >
+    One-shot Kubernetes Job that initializes Vault (5 shares, threshold 3),
+    unseals all HA pods, enables KV v2 mounts, and configures Kubernetes auth.
+  annotations:
+    kubernetes-id: vault-init-job
+    kubernetes-namespace: platform
+    kubernetes-label-selector: job-name=vault-init-job
+spec:
+  type: job
+  lifecycle: production
+  owner: group:default/admins
+  system: vault
+
+---
+kind: Component
+metadata:
+  name: vault-secrets-operator
+  namespace: platform
+  description: >
+    Vault Secrets Operator (VSO) -- watches VaultStaticSecret CRDs and syncs
+    secrets from Vault KV v2 into Kubernetes Secrets.
+  annotations:
+    kubernetes-id: vault-secrets-operator
+    kubernetes-namespace: platform
+    kubernetes-label-selector: app.kubernetes.io/name=vault-secrets-operator
+  links:
+    - url: https://developer.hashicorp.com/vault/docs/platform/k8s/vso
+      title: VSO Docs
+      icon: docs
+spec:
+  type: service
+  lifecycle: production
+  owner: group:default/admins
+  system: vault
+
+---
+kind: Component
+metadata:
+  name: vault-module-config
+  namespace: platform
+  description: >
+    CronJob (inside the vault chart) that discovers ConfigMaps labeled
+    vault: setup-creds and provisions Vault ACL policies and Kubernetes
+    auth roles for every platform module. Runs every 5 minutes.
+  annotations:
+    kubernetes-id: vault-module-config
+    kubernetes-namespace: platform
+    kubernetes-label-selector: app=vault-module-config
+spec:
+  type: cronjob
+  lifecycle: production
+  owner: group:default/admins
+  system: vault
+
+---
+kind: User
+metadata:
+  name: sa-vault-config
+  namespace: platform
+  description: >
+    ServiceAccount for Vault init Job. RBAC access to pods/exec and
+    secrets in the platform namespace.
+  annotations:
+    kubernetes-id: vault-config
+    kubernetes-namespace: platform
+spec:
+  profile:
+    displayName: "vault-config (SA)"
+  memberOf:
+    - default/admins
+
+---
+kind: User
+metadata:
+  name: sa-vault-module-config
+  namespace: platform
+  description: >
+    ServiceAccount for vault module-config CronJob. Role-level access to
+    pods, pods/exec, secrets in platform namespace plus ClusterRole for
+    namespace, ServiceAccount, and ConfigMap discovery.
+  annotations:
+    kubernetes-id: vault-module-config
+    kubernetes-namespace: platform
+spec:
+  profile:
+    displayName: "vault-module-config (SA)"
+  memberOf:
+    - default/admins
