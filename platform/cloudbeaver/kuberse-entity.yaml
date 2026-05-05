@@ -1,0 +1,25 @@
+##
+## Kubrain entity catalog for: platform/cloudbeaver
+## Translated from Backstage catalog-info.yaml to Kubrain format
+##
+
+---
+kind: System
+metadata:
+  name: cloudbeaver
+  namespace: platform
+  title: CloudBeaver
+  description: >
+    CloudBeaver web database manager -- browser-based tool for managing databases.
+  annotations:
+    kubernetes-id: cloudbeaver
+    kubernetes-namespace: platform
+    kubernetes-label-selector: app.kubernetes.io/name=cloudbeaver
+  links:
+    - url: https://cloudbeaver.${BASE_DOMAIN}
+      title: CloudBeaver (DB UI)
+      icon: dashboard
+spec:
+  type: service
+  owner: group:default/admins
+  domain: default/kuberse

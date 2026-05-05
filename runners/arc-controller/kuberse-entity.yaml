@@ -1,0 +1,65 @@
+##
+## Kubrain entity catalog for: runners/arc
+## Translated from Backstage catalog-info.yaml to Kubrain format
+##
+
+---
+kind: System
+metadata:
+  name: arc
+  namespace: runners
+  title: Actions Runner Controller
+  description: >
+    Actions Runner Controller (ARC) -- self-hosted CI runners for
+    repositories. Includes a controller operator, per-repo
+    AutoScalingRunnerSets, auto-provisioned listener pods, and ephemeral
+    runner pods. Vault-integrated for PAT management.
+  annotations:
+    kubernetes-id: arc
+    kubernetes-namespace: runners
+    kubernetes-label-selector: app.kubernetes.io/part-of=gha-rs-controller
+  links:
+    - url: https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners-with-actions-runner-controller/about-actions-runner-controller
+      title: ARC Docs
+      icon: docs
+spec:
+  type: ci
+  owner: group:default/admins
+  domain: default/kuberse
+
+---
+kind: Component
+metadata:
+  name: arc-controller
+  namespace: runners
+  description: >
+    ARC controller operator -- watches AutoScalingRunnerSet CRDs across all
+    namespaces and reconciles AutoScalingListener pods, EphemeralRunnerSets,
+    and runner pods. Exposes Prometheus metrics on :8080/metrics.
+  annotations:
+    kubernetes-id: arc-controller
+    kubernetes-namespace: runners
+    kubernetes-label-selector: app.kubernetes.io/name=gha-rs-controller
+spec:
+  type: service
+  lifecycle: production
+  owner: group:default/admins
+  system: arc
+
+---
+kind: User
+metadata:
+  name: sa-arc-sa
+  namespace: runners
+  description: >
+    ServiceAccount for Vault authentication. Used by VaultAuth to bind
+    the runners namespace to the Vault role and sync the PAT
+    from secret/arc/config into the arc-secrets K8s Secret.
+  annotations:
+    kubernetes-id: arc-sa
+    kubernetes-namespace: runners
+spec:
+  profile:
+    displayName: "arc-sa (SA)"
+  memberOf:
+    - default/admins

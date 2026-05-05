@@ -1,0 +1,29 @@
+##
+## Kubrain entity catalog for: argocd
+## Translated from Backstage catalog-info.yaml to Kubrain format
+##
+
+---
+kind: System
+metadata:
+  name: argocd
+  namespace: argocd
+  title: ArgoCD
+  description: >
+    GitOps continuous delivery engine. Manages the entire platform
+    lifecycle through an App-of-Apps bootstrap pattern with sync waves.
+  annotations:
+    kubernetes-id: argocd-config
+    kubernetes-namespace: argocd
+    kubernetes-label-selector: app.kubernetes.io/part-of=argocd
+  links:
+    - url: https://argocd.${BASE_DOMAIN}
+      title: ArgoCD UI
+      icon: dashboard
+    - url: https://argo-cd.readthedocs.io/en/stable/
+      title: ArgoCD Docs
+      icon: docs
+spec:
+  type: gitops
+  owner: group:default/admins
+  domain: default/kuberse
