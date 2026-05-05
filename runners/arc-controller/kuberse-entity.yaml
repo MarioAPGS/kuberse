@@ -28,7 +28,7 @@ spec:
   domain: default/kuberse
 
 ---
-kind: Component
+kind: Part
 metadata:
   name: arc-controller
   namespace: runners

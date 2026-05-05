@@ -30,7 +30,7 @@ spec:
   domain: default/kuberse
 
 ---
-kind: Component
+kind: Part
 metadata:
   name: vault-init-job
   namespace: platform
@@ -48,7 +48,7 @@ spec:
   system: vault
 
 ---
-kind: Component
+kind: Part
 metadata:
   name: vault-secrets-operator
   namespace: platform
@@ -70,7 +70,7 @@ spec:
   system: vault
 
 ---
-kind: Component
+kind: Part
 metadata:
   name: vault-module-config
   namespace: platform
