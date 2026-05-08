@@ -43,6 +43,15 @@ spec:
                 insecure: true
                 username: env.ARGOCD_USERNAME
                 password: env.ARGOCD_PASSWORD
+              vault:
+                url: env.VAULT_URL
+                token: env.VAULT_TOKEN
+              buildapp:
+                chartRepo: oci://${REGISTRY_URL}/${ORG_NAME}/kuberse/helm/buildapp
+                chartVersion: latest
+                registry:
+                  username: env.GITEA_REGISTRY_USERNAME
+                  password: env.GITEA_REGISTRY_PASSWORD
   destination:
     server: https://kubernetes.default.svc
     namespace: platform
