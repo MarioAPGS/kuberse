@@ -8,7 +8,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: ${GIT_BASE_URL}/${ORG_NAME}
+    repoURL: ${GIT_BASE_URL}/${REPO_NAME}
     targetRevision: main
     path: .
     directory:
