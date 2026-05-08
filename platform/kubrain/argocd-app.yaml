@@ -20,6 +20,29 @@ spec:
           image:
             repository: ${REGISTRY_URL}/kuberse/kuberse/img/kubrain
             pullPolicy: IfNotPresent
+          configFile:
+            enabled: true
+            content: |
+              database:
+                url: env.PG_CONNECTION_STRING
+                synchronize: true
+              ingestion:
+                github:
+                  owner: ${ORG_NAME}
+                  match: "**/kuberse-entity.yaml"
+                  fetch: "*/5 * * * *"
+                  token: env.GITHUB_TOKEN
+                gitea:
+                  url: env.GITEA_URL
+                  owner: ${ORG_NAME}
+                  match: "**/kuberse-entity.yaml"
+                  fetch: "*/5 * * * *"
+                  token: env.GITEA_TOKEN
+              argocd:
+                url: https://argocd-server.argocd.svc.cluster.local
+                insecure: true
+                username: env.ARGOCD_USERNAME
+                password: env.ARGOCD_PASSWORD
   destination:
     server: https://kubernetes.default.svc
     namespace: platform
