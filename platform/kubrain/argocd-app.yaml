@@ -41,8 +41,8 @@ spec:
               argocd:
                 url: https://argocd-server.argocd.svc.cluster.local
                 insecure: true
-                username: env.ARGOCD_USERNAME
-                password: env.ARGOCD_PASSWORD
+                username: admin
+                password: k8s.platform.kuberse-config.admin_password
               vault:
                 url: env.VAULT_URL
               buildapp:
