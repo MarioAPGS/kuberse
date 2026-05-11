@@ -10,16 +10,46 @@ metadata:
 spec:
   project: default
   source:
-    chart: platform
-    repoURL: oci://${REGISTRY_URL}/${ORG_NAME}/kuberse/helm/platform
+    chart: buildapp
+    repoURL: oci://${REGISTRY_URL}/${ORG_NAME}/kuberse/helm/buildapp
     targetRevision: ${PLATFORM_VERSION}
     helm:
       values: |
-        playhouse:
-          enabled: true
+        labName: playhouse
+
+        # Use kubrain SA (cluster-wide access)
+        serviceAccountCreate: false
+        serviceAccountName: kubrain
+
+        # No Vault needed
+        vault: null
+
+        # Dev container with OpenCode agent + code-server
+        dev:
           image:
-            repository: ${REGISTRY_URL}/${ORG_NAME}/kuberse/img/playhouse-kit
+            repository: ${REGISTRY_URL}/${ORG_NAME}/kuberse/img/dev-kit
+            tag: dind
             pullPolicy: IfNotPresent
+          dind: true
+          agent: true
+          storage: 10Gi
+          ssh:
+            port: 22
+            user: dev
+            exposeService: true
+          codeServer:
+            port: 8080
+            auth: none
+          ports: []
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 2000m
+              memory: 4Gi
+
+        services: {}
   destination:
     server: https://kubernetes.default.svc
     namespace: platform
@@ -28,7 +58,7 @@ spec:
       prune: true
       selfHeal: true
     syncOptions:
-      - CreateNamespace=true
+      - CreateNamespace=false
       - ServerSideApply=true
     retry:
       limit: 5
