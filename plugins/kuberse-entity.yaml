@@ -4,7 +4,7 @@ type: internal
 metadata:
   name: kuberse-plugins-docs
   namespace: default
-  title: Kuberse Plugins Documentation
+  title: Plugins
   description: >
     User-facing documentation for the Kuberse plugin system: authoring guide,
     directory layout, OCI distribution, installation flows, lifecycle

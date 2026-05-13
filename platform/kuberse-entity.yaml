@@ -4,7 +4,7 @@ type: internal
 metadata:
   name: kuberse-platform-docs
   namespace: platform
-  title: Kuberse Platform Documentation
+  title: Platform
   description: >
     User-facing documentation for Kuberse platform modules, including Vault,
     PostgreSQL, CloudBeaver, Authentik, Ingress NGINX, Kubernetes Replicator,
