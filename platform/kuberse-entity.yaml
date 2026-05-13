@@ -39,3 +39,5 @@ spec:
       - Networking Model: ingress-nginx/docs/networking-model.md
     - Kubernetes Replicator:
       - Overview: kubernetes-replicator/docs/index.md
+    - CLI:
+      - Platform Setup: cli/docs/setup.md
