@@ -36,6 +36,40 @@ This reference lists the user-facing API areas that power Kubrain's UI. Most use
 | `GET` | `/api/v1/buildapp/:name/status` | Read BuildApp health/sync status |
 | `DELETE` | `/api/v1/buildapp/:name` | Delete BuildApp |
 
+## BuildApp Agent Gateway
+
+Kubrain acts as an API gateway to OpenCode agents running inside BuildApp pods. All agent endpoints require the BuildApp name in the URL path.
+
+| Method | Path | Used By |
+|--------|------|---------|
+| `GET` | `/api/v1/buildapp/:name/agent/health` | Agent health check |
+| `GET` | `/api/v1/buildapp/:name/agent/sessions` | List coding sessions |
+| `POST` | `/api/v1/buildapp/:name/agent/sessions` | Create a new session |
+| `GET` | `/api/v1/buildapp/:name/agent/sessions/:sessionId` | Get session details |
+| `DELETE` | `/api/v1/buildapp/:name/agent/sessions/:sessionId` | Delete session |
+| `GET` | `/api/v1/buildapp/:name/agent/sessions/:sessionId/todo` | Get agent TODO list |
+| `POST` | `/api/v1/buildapp/:name/agent/sessions/:sessionId/abort` | Abort current processing |
+| `GET` | `/api/v1/buildapp/:name/agent/sessions/:sessionId/diff` | Get file diffs |
+| `GET` | `/api/v1/buildapp/:name/agent/sessions/:sessionId/messages` | List messages |
+| `POST` | `/api/v1/buildapp/:name/agent/sessions/:sessionId/messages` | Send message to AI |
+| `GET` | `/api/v1/buildapp/:name/agent/sessions/:sessionId/messages/:messageId` | Get specific message |
+| `POST` | `/api/v1/buildapp/:name/agent/sessions/:sessionId/command` | Execute slash command |
+| `POST` | `/api/v1/buildapp/:name/agent/sessions/:sessionId/shell` | Execute shell command |
+| `GET` | `/api/v1/buildapp/:name/agent/config` | Get agent config |
+| `PATCH` | `/api/v1/buildapp/:name/agent/config` | Update agent config |
+| `GET` | `/api/v1/buildapp/:name/agent/providers` | List AI providers |
+| `GET` | `/api/v1/buildapp/:name/agent/models` | List available models |
+| `GET` | `/api/v1/buildapp/:name/agent/search/text` | Search text in files |
+| `GET` | `/api/v1/buildapp/:name/agent/search/files` | Search files by name |
+| `GET` | `/api/v1/buildapp/:name/agent/search/symbols` | Search code symbols |
+| `GET` | `/api/v1/buildapp/:name/agent/files` | List directory contents |
+| `GET` | `/api/v1/buildapp/:name/agent/files/content` | Read file content |
+| `GET` | `/api/v1/buildapp/:name/agent/files/status` | Get modified files |
+| `GET` | `/api/v1/buildapp/:name/agent/projects` | List projects |
+| `GET` | `/api/v1/buildapp/:name/agent/project` | Get current project |
+| `GET` | `/api/v1/buildapp/:name/agent/path` | Get working directory |
+| `GET` | `/api/v1/buildapp/:name/agent/vcs` | Get git info |
+
 ## Docs
 
 | Method | Path | Used By |

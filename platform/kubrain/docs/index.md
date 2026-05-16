@@ -61,5 +61,6 @@ The screenshots in this documentation show representative UI sections. They are 
 - [Using the Catalog](catalog/overview.md)
 - [ArgoCD Resources](catalog/argocd-resources.md)
 - [Creating BuildApps](buildapps/create-buildapp.md)
+- [BuildApp Agent Gateway](buildapps/agent-gateway.md)
 - [Using the Docs Portal](docs-portal/overview.md)
 - [Routes Reference](reference/routes.md)
