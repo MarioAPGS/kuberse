@@ -28,3 +28,4 @@ spec:
   type: gitops
   owner: group:default/admins
   domain: default/kuberse
+  openApiUrl: /api/argocd/docs-json

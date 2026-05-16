@@ -29,6 +29,7 @@ spec:
   type: secrets
   owner: group:default/admins
   domain: default/kuberse
+  openApiUrl: /api/vault/docs-json
 
 ---
 kind: Part
