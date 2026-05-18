@@ -15,3 +15,42 @@ resources:
 
 service:
   port: 80
+
+# --- Vault Integration ---
+# Connects to the platform Vault instance for secret management.
+# The Vault CronJob auto-discovers the vault-role-configmap and creates
+# the role + policy in Vault automatically.
+vault:
+  enabled: false
+  host: http://vault.platform.svc.cluster.local:8200
+  configSecretPath: "hello/config"   # KV-v2 path for app config secrets
+  dbSecretPath: "hello/db"           # KV-v2 path for database credentials
+  role:
+    ttl: "24h"
+    paths:
+      - path: "secret/data/hello/*"
+        capabilities: ["read"]
+      - path: "secret/metadata/hello/*"
+        capabilities: ["read", "list"]
+
+# --- PostgreSQL Integration ---
+# When enabled, the plugin expects a PG_CONNECTION_STRING in Vault at vault.dbSecretPath.
+# The platform postgres provisioner CronJob auto-creates the database/user
+# when it discovers the Secret labeled `pgdb: PG_CONNECTION_STRING`.
+#
+# Connection string format stored in Vault:
+#   postgresql://hello:PASSWORD@postgres.platform.svc.cluster.local:5432/hello
+postgresql:
+  enabled: false
+  host: postgres.platform.svc.cluster.local
+  port: "5432"
+  name: hello       # database name
+  user: hello       # database user
+
+# --- CloudBeaver Integration ---
+# When enabled (and postgresql is also enabled), the db Secret gets the `cbdb` label.
+# The CloudBeaver onboarding CronJob discovers it and auto-registers the
+# database connection in CloudBeaver's web UI for developers.
+# No extra configuration needed -- it uses the same PG_CONNECTION_STRING.
+cloudbeaver:
+  enabled: false

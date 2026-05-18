@@ -1,10 +1,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}-hello
+  name: {{ include "hello.fullname" . }}
   labels:
-    app.kubernetes.io/name: hello
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- include "hello.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
@@ -17,6 +16,9 @@ spec:
         app.kubernetes.io/name: hello
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
+      {{- if .Values.vault.enabled }}
+      serviceAccountName: {{ include "hello.serviceAccountName" . }}
+      {{- end }}
       containers:
         - name: hello
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -24,5 +26,18 @@ spec:
           ports:
             - containerPort: 80
               protocol: TCP
+          {{- if or .Values.vault.enabled .Values.postgresql.enabled }}
+          envFrom:
+            {{- if .Values.vault.enabled }}
+            - secretRef:
+                name: hello-config-secrets
+                optional: true
+            {{- end }}
+            {{- if .Values.postgresql.enabled }}
+            - secretRef:
+                name: hello-db-secrets
+                optional: true
+            {{- end }}
+          {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}

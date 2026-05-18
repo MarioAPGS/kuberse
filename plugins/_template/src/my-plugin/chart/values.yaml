@@ -1,2 +1,10 @@
 hello:
   enabled: false
+
+  # Enable platform integrations (disabled by default)
+  # vault:
+  #   enabled: true
+  # postgresql:
+  #   enabled: true
+  # cloudbeaver:
+  #   enabled: true

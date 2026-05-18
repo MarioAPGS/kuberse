@@ -80,9 +80,14 @@ my-plugin/
                 └── hello/                # vendored subchart
                     ├── Chart.yaml
                     ├── values.yaml
+                    ├── spected-secrets.txt        # documents required Vault paths/keys
                     └── templates/
+                        ├── _helpers.tpl           # common labels, names
                         ├── deployment.yaml
-                        └── service.yaml
+                        ├── service.yaml
+                        ├── serviceaccount.yaml    # SA for Vault auth
+                        ├── vault.yaml             # VaultConnection + VaultAuth + VaultStaticSecret(s)
+                        └── vault-role-configmap.yaml  # auto-discovered by Vault CronJob
 ```
 
 The key directories:
@@ -166,7 +171,9 @@ hello:
 - **No `enabled` gate inside subchart templates.** The `condition` in `Chart.yaml` handles this -- Helm prunes disabled subcharts before rendering.
 - **Resource limits/requests are mandatory** on every container.
 - **Sync waves:** plugins sit at wave `2` (after the platform is up).
-- **Vault integration:** subcharts needing secrets ship `VaultConnection`, `VaultAuth`, `VaultStaticSecret`, and a `vault-role-configmap` labeled `vault: setup-creds`.
+- **Vault integration:** subcharts needing secrets ship `VaultConnection`, `VaultAuth`, `VaultStaticSecret`, and a `vault-role-configmap` labeled `vault: setup-creds`. See the `_template` for a complete example gated by `vault.enabled`.
+- **PostgreSQL integration:** to auto-provision a database, add the label `pgdb: PG_CONNECTION_STRING` to the `VaultStaticSecret` destination. The platform postgres provisioner CronJob discovers it and creates the database/user automatically. Gated by `postgresql.enabled` in the template.
+- **CloudBeaver integration:** to auto-register the database in CloudBeaver's web UI, add an additional label `cbdb: PG_CONNECTION_STRING` to the same Secret. The CloudBeaver onboarding CronJob handles registration. Gated by `cloudbeaver.enabled` in the template.
 
 ### ArgoCD manifests
 

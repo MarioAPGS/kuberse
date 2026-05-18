@@ -1,0 +1,20 @@
+{{- if and .Values.vault.enabled .Values.vault.role }}
+# ConfigMap discovered by the Vault CronJob (label: vault=setup-creds)
+# The CronJob auto-creates the Vault role + policy for this module
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "hello.fullname" . }}-vault-role
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "hello.labels" . | nindent 4 }}
+    vault: setup-creds
+data:
+  name: "hello"
+  serviceAccount: {{ include "hello.serviceAccountName" . | quote }}
+  ttl: {{ .Values.vault.role.ttl | default "24h" | quote }}
+  secretPaths: |
+    {{- range .Values.vault.role.paths }}
+    {{ .path }}:{{ join "," .capabilities }}
+    {{- end }}
+{{- end }}
