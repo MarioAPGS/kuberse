@@ -29,7 +29,11 @@ spec:
   type: secrets
   owner: group:default/admins
   domain: default/kuberse
-  openApiUrl: /api/vault/docs-json
+  api:
+    - name: vault
+      host: http://kubrain.platform.svc.cluster.local:3000
+      docs: /api/vault/docs
+      openApi: /api/vault/docs-json
 
 ---
 kind: Part

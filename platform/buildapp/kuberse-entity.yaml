@@ -20,4 +20,8 @@ spec:
   owner: group:default/admins
   domain: default/kuberse
   system: kubrain
-  openApiUrl: /api/buildapp/docs-json
+  api:
+    - name: buildapp
+      host: http://kubrain.platform.svc.cluster.local:3000
+      docs: /api/buildapp/docs
+      openApi: /api/buildapp/docs-json

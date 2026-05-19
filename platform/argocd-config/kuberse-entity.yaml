@@ -28,4 +28,8 @@ spec:
   type: gitops
   owner: group:default/admins
   domain: default/kuberse
-  openApiUrl: /api/argocd/docs-json
+  api:
+    - name: argocd
+      host: http://kubrain.platform.svc.cluster.local:3000
+      docs: /api/argocd/docs
+      openApi: /api/argocd/docs-json
