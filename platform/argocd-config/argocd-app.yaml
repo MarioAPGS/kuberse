@@ -17,6 +17,17 @@ spec:
       values: |
         argocd-config:
           enabled: true
+          ingress:
+            host: "argocd.${BASE_DOMAIN}"
+          oidc:
+            url: "https://argocd.${BASE_DOMAIN}"
+            issuer: "https://auth.${BASE_DOMAIN}/application/o/argocd/"
+          authentikOidc:
+            redirectUris:
+              - url: "https://argocd.${BASE_DOMAIN}/auth/callback"
+                matchingMode: strict
+            application:
+              launchUrl: "https://argocd.${BASE_DOMAIN}"
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd

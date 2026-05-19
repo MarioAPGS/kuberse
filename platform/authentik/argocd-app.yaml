@@ -17,6 +17,8 @@ spec:
       values: |
         authentik:
           enabled: true
+          ingress:
+            host: "auth.${BASE_DOMAIN}"
   destination:
     server: https://kubernetes.default.svc
     namespace: platform

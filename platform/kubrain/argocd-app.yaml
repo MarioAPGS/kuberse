@@ -17,6 +17,8 @@ spec:
       values: |
         kubrain:
           enabled: true
+          ingress:
+            host: "kubrain.${BASE_DOMAIN}"
           image:
             repository: ${REGISTRY_URL}/${ORG_NAME}/kuberse/img/kubrain
             pullPolicy: Always
