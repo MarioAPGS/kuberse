@@ -1,5 +1,9 @@
 name: Publish Plugin
 
+# Self-contained GitHub Actions workflow for kuberse plugins.
+# Replicates the same logic as the former reusable plugin-release.yaml
+# but without external workflow_call dependency.
+
 on:
   push:
     branches: [main]
@@ -14,14 +18,360 @@ permissions:
   contents: write
   packages: write
 
+env:
+  REGISTRY_IMAGES: ghcr.io/${{ github.repository_owner }}/kuberse
+  REGISTRY_CHARTS: oci://ghcr.io/${{ github.repository_owner }}/PLUGIN_NAME-plugin/charts
+  REGISTRY_MANIFEST: ghcr.io/${{ github.repository_owner }}/PLUGIN_NAME-plugin
+  REGISTRY_USER: ${{ github.actor }}
+
 jobs:
-  release:
-    uses: MarioAPGS/kuberse/.github/workflows/plugin-release.yaml@main
-    with:
-      registry-images: ghcr.io/YOUR_GITHUB_USERNAME
-      registry-charts: oci://ghcr.io/YOUR_GITHUB_USERNAME/my-plugin-plugin/charts
-      registry-manifest: ghcr.io/YOUR_GITHUB_USERNAME/my-plugin-plugin
-      registry-user: ${{ github.actor }}
-      force-rebuild: ${{ inputs.force-rebuild || false }}
-    secrets:
-      registry-password: ${{ secrets.GITHUB_TOKEN }}
+  # ── Determine version ──
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.semver.outputs.version }}
+      bump: ${{ steps.semver.outputs.bump }}
+      prev-tag: ${{ steps.semver.outputs.prev-tag }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compute version
+        id: semver
+        shell: bash
+        run: |
+          PREV_TAG=$(git tag -l 'v*' --sort=-v:refname | head -1)
+          if [ -z "$PREV_TAG" ]; then
+            PREV_TAG=""
+            PREV_VERSION="0.0.0"
+          else
+            PREV_VERSION="${PREV_TAG#v}"
+          fi
+
+          echo "prev-tag=$PREV_TAG" >> "$GITHUB_OUTPUT"
+
+          if [ "${{ inputs.force-rebuild }}" = "true" ]; then
+            echo "bump=rebuild" >> "$GITHUB_OUTPUT"
+            echo "version=$PREV_VERSION" >> "$GITHUB_OUTPUT"
+            echo "Force rebuild: using version $PREV_VERSION"
+            exit 0
+          fi
+
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$PREV_VERSION"
+
+          if [ -n "$PREV_TAG" ]; then
+            COMMITS=$(git log "$PREV_TAG"..HEAD --format="%s")
+          else
+            COMMITS=$(git log --format="%s")
+          fi
+
+          if [ -z "$COMMITS" ]; then
+            echo "No new commits since $PREV_TAG"
+            echo "bump=none" >> "$GITHUB_OUTPUT"
+            echo "version=$PREV_VERSION" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          BUMP="none"
+          while IFS= read -r msg; do
+            case "$msg" in
+              *"BREAKING CHANGE"*|*!:*) BUMP="major" ;;
+            esac
+          done <<< "$COMMITS"
+
+          if [ "$BUMP" = "none" ]; then
+            while IFS= read -r msg; do
+              case "$msg" in
+                feat*) [ "$BUMP" != "major" ] && BUMP="minor" ;;
+              esac
+            done <<< "$COMMITS"
+          fi
+
+          if [ "$BUMP" = "none" ]; then
+            while IFS= read -r msg; do
+              case "$msg" in
+                fix*|perf*|refactor*) BUMP="patch" ;;
+              esac
+            done <<< "$COMMITS"
+          fi
+
+          [ "$BUMP" = "none" ] && BUMP="patch"
+
+          case "$BUMP" in
+            major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+            minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
+            patch) PATCH=$((PATCH + 1)) ;;
+          esac
+
+          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+          echo "bump=$BUMP" >> "$GITHUB_OUTPUT"
+          echo "version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+          echo "Bump: $BUMP | $PREV_VERSION -> $NEW_VERSION"
+
+  # ── Detect what changed since last tag ──
+  changes:
+    needs: version
+    if: needs.version.outputs.bump != 'none'
+    runs-on: ubuntu-latest
+    outputs:
+      charts: ${{ steps.detect.outputs.charts }}
+      images: ${{ steps.detect.outputs.images }}
+      has-charts: ${{ steps.detect.outputs.has-charts }}
+      has-images: ${{ steps.detect.outputs.has-images }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed apps
+        id: detect
+        shell: bash
+        run: |
+          FORCE="${{ inputs.force-rebuild }}"
+          PREV_TAG="${{ needs.version.outputs.prev-tag }}"
+
+          if [ "$FORCE" = "true" ]; then
+            CHARTS='[]'
+            IMAGES='[]'
+            if [ -d src ]; then
+              for app_dir in src/*/; do
+                app=$(basename "$app_dir")
+                if [ -d "src/$app/chart" ]; then
+                  CHARTS=$(echo "$CHARTS" | jq -c --arg a "$app" '. + [$a]')
+                fi
+                if [ -d "src/$app/containers" ]; then
+                  for img_dir in src/$app/containers/*/; do
+                    if [ -d "$img_dir" ]; then
+                      img=$(basename "$img_dir")
+                      IMAGES=$(echo "$IMAGES" | jq -c --arg a "$app/$img" '. + [$a]')
+                    fi
+                  done
+                fi
+              done
+            fi
+            echo "charts=$CHARTS" >> "$GITHUB_OUTPUT"
+            echo "images=$IMAGES" >> "$GITHUB_OUTPUT"
+            echo "has-charts=$( [ "$CHARTS" != '[]' ] && echo true || echo false )" >> "$GITHUB_OUTPUT"
+            echo "has-images=$( [ "$IMAGES" != '[]' ] && echo true || echo false )" >> "$GITHUB_OUTPUT"
+            echo "Force rebuild ALL — Charts: $CHARTS | Images: $IMAGES"
+            exit 0
+          fi
+
+          if [ -n "$PREV_TAG" ]; then
+            CHANGED=$(git diff --name-only "$PREV_TAG"..HEAD)
+          else
+            CHANGED=$(git ls-files)
+          fi
+
+          CHARTS='[]'
+          if [ -d src ]; then
+            for app_dir in src/*/; do
+              app=$(basename "$app_dir")
+              if [ -d "src/$app/chart" ] && echo "$CHANGED" | grep -q "^src/$app/chart/"; then
+                CHARTS=$(echo "$CHARTS" | jq -c --arg a "$app" '. + [$a]')
+              fi
+            done
+          fi
+
+          IMAGES='[]'
+          if [ -d src ]; then
+            for app_dir in src/*/; do
+              app=$(basename "$app_dir")
+              if [ -d "src/$app/containers" ] && echo "$CHANGED" | grep -q "^src/$app/containers/"; then
+                for img_dir in src/$app/containers/*/; do
+                  if [ -d "$img_dir" ]; then
+                    img=$(basename "$img_dir")
+                    if echo "$CHANGED" | grep -q "^src/$app/containers/$img/"; then
+                      IMAGES=$(echo "$IMAGES" | jq -c --arg a "$app/$img" '. + [$a]')
+                    fi
+                  fi
+                done
+              fi
+            done
+          fi
+
+          echo "charts=$CHARTS" >> "$GITHUB_OUTPUT"
+          echo "images=$IMAGES" >> "$GITHUB_OUTPUT"
+          echo "has-charts=$( [ "$CHARTS" != '[]' ] && echo true || echo false )" >> "$GITHUB_OUTPUT"
+          echo "has-images=$( [ "$IMAGES" != '[]' ] && echo true || echo false )" >> "$GITHUB_OUTPUT"
+          echo "Charts to build: $CHARTS"
+          echo "Images to build: $IMAGES"
+
+  # ── Build and push charts (matrix, parallel) ──
+  build-charts:
+    needs: [version, changes]
+    if: needs.changes.outputs.has-charts == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        chart: ${{ fromJson(needs.changes.outputs.charts) }}
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oras-project/setup-oras@v1
+
+      - name: Build and push chart
+        shell: bash
+        env:
+          REGISTRY: ${{ env.REGISTRY_CHARTS }}
+          USER: ${{ env.REGISTRY_USER }}
+          PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+          APP: ${{ matrix.chart }}
+        run: |
+          REGISTRY_HOST=$(echo "$REGISTRY" | sed 's|oci://||' | cut -d/ -f1)
+          echo "$PASSWORD" | helm registry login "$REGISTRY_HOST" -u "$USER" --password-stdin
+          echo "$PASSWORD" | oras login "$REGISTRY_HOST" -u "$USER" --password-stdin
+
+          chart_dir="src/$APP/chart"
+          NAME=$(grep '^name:' "$chart_dir/Chart.yaml" | awk '{print $2}')
+          CHART_VERSION=$(grep '^version:' "$chart_dir/Chart.yaml" | awk '{print $2}' | tr -d '"')
+
+          if grep -q '^dependencies:' "$chart_dir/Chart.yaml" 2>/dev/null; then
+            if [ -d "$chart_dir/charts" ]; then
+              for sub in "$chart_dir"/charts/*/; do
+                [ -d "$sub" ] || continue
+                if [ -f "$sub/Chart.yaml" ] && grep -q '^dependencies:' "$sub/Chart.yaml" 2>/dev/null; then
+                  echo "Updating dependencies for subchart: $sub"
+                  helm dependency update "$sub"
+                fi
+              done
+            fi
+            helm dependency update "$chart_dir/"
+          fi
+
+          helm package "$chart_dir/"
+          helm push "${NAME}-${CHART_VERSION}.tgz" "$REGISTRY"
+          rm -f "${NAME}-${CHART_VERSION}.tgz"
+
+          REGISTRY_PATH=$(echo "$REGISTRY" | sed 's|oci://||')
+          oras tag "${REGISTRY_PATH}/${NAME}:${CHART_VERSION}" latest
+
+          echo "Pushed $NAME:$CHART_VERSION + latest"
+
+  # ── Build and push images (matrix, parallel) ──
+  build-images:
+    needs: [version, changes]
+    if: needs.changes.outputs.has-images == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        image: ${{ fromJson(needs.changes.outputs.images) }}
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ env.REGISTRY_USER }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        shell: bash
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+          ENTRY: ${{ matrix.image }}
+        run: |
+          app=$(echo "$ENTRY" | cut -d/ -f1)
+          img=$(echo "$ENTRY" | cut -d/ -f2)
+          docker buildx build \
+            --push \
+            --tag "${{ env.REGISTRY_IMAGES }}/$img:$VERSION" \
+            --tag "${{ env.REGISTRY_IMAGES }}/$img:latest" \
+            "src/$app/containers/$img/"
+          echo "Pushed $img:$VERSION + latest"
+
+  # ── Publish template as OCI artifact + create git tag ──
+  publish:
+    needs: [version, changes, build-charts, build-images]
+    if: |
+      always() &&
+      needs.version.outputs.bump != 'none' &&
+      !contains(needs.*.result, 'failure')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update plugin.yaml version
+        shell: bash
+        run: |
+          VERSION="${{ needs.version.outputs.version }}"
+          sed -i "s/^  version:.*/  version: $VERSION/" template/plugin.yaml
+
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          plugin = Path("template/plugin.yaml")
+          text = plugin.read_text()
+
+          chart_pattern = re.compile(
+              r"(oci://[^\s]+/charts/([A-Za-z0-9._-]+)):latest"
+          )
+
+          def resolve(match: re.Match) -> str:
+              base, name = match.group(1), match.group(2)
+              chart_yaml = Path(f"src/{name}/chart/Chart.yaml")
+              if not chart_yaml.exists():
+                  print(f"WARN: {chart_yaml} not found; leaving :latest for {name}")
+                  return match.group(0)
+              for line in chart_yaml.read_text().splitlines():
+                  if line.startswith("version:"):
+                      ver = line.split(":", 1)[1].strip().strip('"').strip("'")
+                      print(f"Resolved {name}: latest -> {ver}")
+                      return f"{base}:{ver}"
+              print(f"WARN: no version field in {chart_yaml}; leaving :latest")
+              return match.group(0)
+
+          new_text = chart_pattern.sub(resolve, text)
+          plugin.write_text(new_text)
+          PY
+
+          echo "--- Updated plugin.yaml ---"
+          cat template/plugin.yaml
+
+      - name: Login to registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ env.REGISTRY_USER }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install ORAS
+        uses: oras-project/setup-oras@v1
+
+      - name: Push template as OCI artifact
+        shell: bash
+        working-directory: template
+        run: |
+          VERSION="${{ needs.version.outputs.version }}"
+          oras push "${{ env.REGISTRY_MANIFEST }}:${VERSION}" .
+          oras push "${{ env.REGISTRY_MANIFEST }}:latest" .
+          echo "Published template: ${VERSION} + latest"
+
+      - name: Create and push git tag
+        if: needs.version.outputs.bump != 'rebuild'
+        shell: bash
+        run: |
+          VERSION="${{ needs.version.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "v${VERSION}" -m "Release v${VERSION}"
+          git push origin "v${VERSION}"
