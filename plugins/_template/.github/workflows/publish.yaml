@@ -124,15 +124,15 @@ jobs:
           echo "charts=$CHARTS" >> "$GITHUB_OUTPUT"
           echo "images=$IMAGES" >> "$GITHUB_OUTPUT"
 
+      - uses: oras-project/setup-oras@v1
+        if: steps.semver.outputs.bump != 'none'
+
       - name: Registry login
         if: steps.semver.outputs.bump != 'none'
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login "$REGISTRY_HOST" -u "$REGISTRY_USER" --password-stdin
           echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login "$REGISTRY_HOST" -u "$REGISTRY_USER" --password-stdin
           echo "${{ secrets.GITHUB_TOKEN }}" | oras login "$REGISTRY_HOST" -u "$REGISTRY_USER" --password-stdin
-
-      - uses: oras-project/setup-oras@v1
-        if: steps.semver.outputs.bump != 'none'
 
       - name: Build and push charts
         if: steps.semver.outputs.bump != 'none' && steps.changes.outputs.charts != ''
