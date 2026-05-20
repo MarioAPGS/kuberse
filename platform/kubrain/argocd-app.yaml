@@ -11,16 +11,16 @@ spec:
   project: default
   source:
     chart: platform
-    repoURL: oci://${REGISTRY_URL}/${ORG_NAME}/kuberse/helm/platform
-    targetRevision: ${PLATFORM_VERSION}
+    repoURL: oci://gitea-http.platform.svc.cluster.local:3000/marioapgs/kuberse/helm/platform
+    targetRevision: latest
     helm:
       values: |
         kubrain:
           enabled: true
           ingress:
-            host: "kubrain.${BASE_DOMAIN}"
+            host: "kubrain.kuberse.net"
           image:
-            repository: ${REGISTRY_URL}/${ORG_NAME}/kuberse/img/kubrain
+            repository: gitea-http.platform.svc.cluster.local:3000/marioapgs/kuberse/img/kubrain
             pullPolicy: Always
           configFile:
             enabled: true
@@ -30,13 +30,13 @@ spec:
                 synchronize: true
               ingestion:
                 github:
-                  owner: ${ORG_NAME}
+                  owner: marioapgs
                   match: "**/kuberse-entity.yaml"
                   fetch: "*/5 * * * *"
                   token: k8s.platform.kuberse-config.github_token
                 gitea:
                   url: http://gitea-http.platform.svc.cluster.local:3000
-                  organization: ${ORG_NAME}
+                  organization: marioapgs
                   match: "**/kuberse-entity.yaml"
                   fetch: "*/5 * * * *"
                   token: k8s.platform.kuberse-config.gitea_token
@@ -48,7 +48,7 @@ spec:
               vault:
                 url: env.VAULT_URL
               buildapp:
-                chartRepo: oci://${REGISTRY_URL}/${ORG_NAME}/kuberse/helm/buildapp
+                chartRepo: oci://gitea-http.platform.svc.cluster.local:3000/marioapgs/kuberse/helm/buildapp
                 chartVersion: latest
   destination:
     server: https://kubernetes.default.svc
