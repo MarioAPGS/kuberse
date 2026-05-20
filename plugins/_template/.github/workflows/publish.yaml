@@ -1,6 +1,6 @@
 name: Publish Plugin
 
-# Self-contained GitHub Actions workflow for kuberse plugins.
+# Self-contained GitHub Actions workflow template for new plugins.
 # Replicates the same logic as the former reusable plugin-release.yaml
 # but without external workflow_call dependency.
 
@@ -18,12 +18,6 @@ permissions:
   contents: write
   packages: write
 
-env:
-  REGISTRY_IMAGES: ghcr.io/${{ github.repository_owner }}/kuberse
-  REGISTRY_CHARTS: oci://ghcr.io/${{ github.repository_owner }}/PLUGIN_NAME-plugin/charts
-  REGISTRY_MANIFEST: ghcr.io/${{ github.repository_owner }}/PLUGIN_NAME-plugin
-  REGISTRY_USER: ${{ github.actor }}
-
 jobs:
   # ── Determine version ──
   version:
@@ -32,12 +26,26 @@ jobs:
       version: ${{ steps.semver.outputs.version }}
       bump: ${{ steps.semver.outputs.bump }}
       prev-tag: ${{ steps.semver.outputs.prev-tag }}
+      registry-images: ${{ steps.registry.outputs.images }}
+      registry-charts: ${{ steps.registry.outputs.charts }}
+      registry-manifest: ${{ steps.registry.outputs.manifest }}
+      registry-user: ${{ steps.registry.outputs.user }}
     permissions:
       contents: read
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Compute registry paths
+        id: registry
+        shell: bash
+        run: |
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "images=ghcr.io/${OWNER}/kuberse" >> "$GITHUB_OUTPUT"
+          echo "charts=oci://ghcr.io/${OWNER}/PLUGIN_NAME-plugin/charts" >> "$GITHUB_OUTPUT"
+          echo "manifest=ghcr.io/${OWNER}/PLUGIN_NAME-plugin" >> "$GITHUB_OUTPUT"
+          echo "user=${{ github.actor }}" >> "$GITHUB_OUTPUT"
 
       - name: Compute version
         id: semver
@@ -221,8 +229,8 @@ jobs:
       - name: Build and push chart
         shell: bash
         env:
-          REGISTRY: ${{ env.REGISTRY_CHARTS }}
-          USER: ${{ env.REGISTRY_USER }}
+          REGISTRY: ${{ needs.version.outputs.registry-charts }}
+          USER: ${{ needs.version.outputs.registry-user }}
           PASSWORD: ${{ secrets.GITHUB_TOKEN }}
           APP: ${{ matrix.chart }}
         run: |
@@ -277,7 +285,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ env.REGISTRY_USER }}
+          username: ${{ needs.version.outputs.registry-user }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push image
@@ -285,13 +293,14 @@ jobs:
         env:
           VERSION: ${{ needs.version.outputs.version }}
           ENTRY: ${{ matrix.image }}
+          REGISTRY_IMAGES: ${{ needs.version.outputs.registry-images }}
         run: |
           app=$(echo "$ENTRY" | cut -d/ -f1)
           img=$(echo "$ENTRY" | cut -d/ -f2)
           docker buildx build \
             --push \
-            --tag "${{ env.REGISTRY_IMAGES }}/$img:$VERSION" \
-            --tag "${{ env.REGISTRY_IMAGES }}/$img:latest" \
+            --tag "${REGISTRY_IMAGES}/$img:$VERSION" \
+            --tag "${REGISTRY_IMAGES}/$img:latest" \
             "src/$app/containers/$img/"
           echo "Pushed $img:$VERSION + latest"
 
@@ -351,7 +360,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ env.REGISTRY_USER }}
+          username: ${{ needs.version.outputs.registry-user }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install ORAS
@@ -360,10 +369,12 @@ jobs:
       - name: Push template as OCI artifact
         shell: bash
         working-directory: template
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+          REGISTRY_MANIFEST: ${{ needs.version.outputs.registry-manifest }}
         run: |
-          VERSION="${{ needs.version.outputs.version }}"
-          oras push "${{ env.REGISTRY_MANIFEST }}:${VERSION}" .
-          oras push "${{ env.REGISTRY_MANIFEST }}:latest" .
+          oras push "${REGISTRY_MANIFEST}:${VERSION}" .
+          oras push "${REGISTRY_MANIFEST}:latest" .
           echo "Published template: ${VERSION} + latest"
 
       - name: Create and push git tag

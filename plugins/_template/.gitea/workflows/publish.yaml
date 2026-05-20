@@ -1,6 +1,6 @@
 name: Publish Plugin (Gitea)
 
-# Self-contained Gitea Actions workflow for kuberse plugins.
+# Self-contained Gitea Actions workflow for kuberse-ai.
 # Uses the automatic GITEA_TOKEN (exposed as github.token) for registry auth.
 
 on:
@@ -15,9 +15,6 @@ on:
 
 env:
   REGISTRY_HOST: gitea-http.platform.svc.cluster.local:3000
-  REGISTRY_IMAGES: gitea-http.platform.svc.cluster.local:3000/${{ github.repository_owner }}
-  REGISTRY_CHARTS: oci://gitea-http.platform.svc.cluster.local:3000/${{ github.repository_owner }}/PLUGIN_NAME-plugin/charts
-  REGISTRY_MANIFEST: gitea-http.platform.svc.cluster.local:3000/${{ github.repository_owner }}/PLUGIN_NAME-plugin
   REGISTRY_USER: ${{ github.actor }}
 
 jobs:
@@ -27,6 +24,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Compute registry paths
+        shell: bash
+        run: |
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "REGISTRY_IMAGES=${REGISTRY_HOST}/${OWNER}" >> "$GITHUB_ENV"
+          echo "REGISTRY_CHARTS=oci://${REGISTRY_HOST}/${OWNER}/PLUGIN_NAME-plugin/charts" >> "$GITHUB_ENV"
+          echo "REGISTRY_MANIFEST=${REGISTRY_HOST}/${OWNER}/PLUGIN_NAME-plugin" >> "$GITHUB_ENV"
 
       # ── Compute version ──
       - name: Compute version
