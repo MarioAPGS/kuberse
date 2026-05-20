@@ -52,7 +52,7 @@ Access is controlled through ArgoCD's built-in RBAC system:
 
 | Role | Who | Permissions |
 |------|-----|-------------|
-| `role:admin` | Users matching `${ADMIN_EMAIL}` or in the `admin` group | Full access: applications, clusters, repos, accounts, exec, logs |
+| `role:admin` | Users matching `marioapgs@gmail.com` or in the `admin` group | Full access: applications, clusters, repos, accounts, exec, logs |
 | `role:readonly` | Everyone else (default policy) | Read-only access to all resources |
 
 The admin email is set during platform bootstrap (stored in `kuberse-config` Secret). Group membership comes from the `groups` claim in the OIDC JWT token, which Authentik populates based on user assignments.

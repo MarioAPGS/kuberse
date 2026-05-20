@@ -83,16 +83,16 @@ Clones the forked/mirrored registry to `/workspace/registry` inside the pod.
 
 Substitutes configuration placeholders throughout the cloned repository:
 
-- `${REGISTRY_URL}` - OCI registry URL
-- `${GIT_BASE_URL}` - Git server base URL
-- `${ORG_NAME}` - Organization/owner name
-- `${BASE_DOMAIN}` - Your chosen base domain
-- `${ADMIN_EMAIL}` - Admin email address
-- `${ADMIN_USERNAME}` - Derived from admin email
-- `${ADMIN_PASSWORD}` - Admin password
-- `${GIT_PROVIDER}` - `github` or `gitea`
-- `${CLUSTER_MODE}` - `minikube` or `k3s`
-- `${GIT_BASE_URL_EXTERNAL}` - External Git URL (if different from internal)
+- `gitea-http.platform.svc.cluster.local:3000` - OCI registry URL
+- `http://gitea-http.platform.svc.cluster.local:3000/marioapgs` - Git server base URL
+- `marioapgs` - Organization/owner name
+- `kuberse.net` - Your chosen base domain
+- `marioapgs@gmail.com` - Admin email address
+- `marioapgs` - Derived from admin email
+- `admin` - Admin password
+- `gitea` - `github` or `gitea`
+- `k3s` - `minikube` or `k3s`
+- `` - External Git URL (if different from internal)
 
 ### 5. Mirror artifacts (Gitea only)
 

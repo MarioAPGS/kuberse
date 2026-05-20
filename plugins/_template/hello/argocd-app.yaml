@@ -11,7 +11,7 @@ spec:
   project: default
   source:
     chart: my-plugin
-    repoURL: oci://${REGISTRY_URL}/${ORG_NAME}/charts/my-plugin
+    repoURL: oci://gitea-http.platform.svc.cluster.local:3000/marioapgs/charts/my-plugin
     targetRevision: ${MY_PLUGIN_VERSION}
     helm:
       values: |

@@ -11,14 +11,14 @@ spec:
   project: default
   source:
     chart: platform
-    repoURL: oci://${REGISTRY_URL}/${ORG_NAME}/kuberse/helm/platform
-    targetRevision: ${PLATFORM_VERSION}
+    repoURL: oci://gitea-http.platform.svc.cluster.local:3000/marioapgs/kuberse/helm/platform
+    targetRevision: latest
     helm:
       values: |
         vault:
           enabled: true
           ingress:
-            host: "vault.${BASE_DOMAIN}"
+            host: "vault.kuberse.net"
   destination:
     server: https://kubernetes.default.svc
     namespace: platform

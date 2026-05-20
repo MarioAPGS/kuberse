@@ -18,7 +18,7 @@ metadata:
     AutoScalingRunnerSets, auto-provisioned listener pods, and ephemeral
     runner pods. Vault-integrated for PAT management.
   annotations:
-    backstage.io/techdocs-ref: url:${GIT_BASE_URL}/kuberse-helm/tree/main/helm/runners/arc-runners
+    backstage.io/techdocs-ref: url:http://gitea-http.platform.svc.cluster.local:3000/marioapgs/kuberse-helm/tree/main/helm/runners/arc-runners
     backstage.io/kubernetes-id: arc
     backstage.io/kubernetes-namespace: runners
     backstage.io/kubernetes-label-selector: app.kubernetes.io/part-of=gha-rs-controller
@@ -46,7 +46,7 @@ metadata:
     namespaces and reconciles AutoScalingListener pods, EphemeralRunnerSets,
     and runner pods. Exposes Prometheus metrics on :8080/metrics.
   annotations:
-    backstage.io/techdocs-ref: url:${GIT_BASE_URL}/kuberse-helm/tree/main/helm/runners/arc-controller
+    backstage.io/techdocs-ref: url:http://gitea-http.platform.svc.cluster.local:3000/marioapgs/kuberse-helm/tree/main/helm/runners/arc-controller
     backstage.io/kubernetes-id: arc-controller
     backstage.io/kubernetes-namespace: runners
     backstage.io/kubernetes-label-selector: app.kubernetes.io/name=gha-rs-controller

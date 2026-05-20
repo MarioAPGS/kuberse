@@ -161,16 +161,16 @@ Walks every file in the cloned repo (skipping `.git/`) and performs string subst
 
 | Placeholder | Replaced with |
 |-------------|---------------|
-| `${REGISTRY_URL}` | OCI registry URL (e.g. `ghcr.io/myorg` or `gitea-http.platform.svc.cluster.local:3000/kuberse`) |
-| `${GIT_BASE_URL}` | Git server URL (e.g. `https://github.com` or `http://gitea-http.platform.svc.cluster.local:3000`) |
-| `${ORG_NAME}` | Organization name (e.g. `myorg` or `kuberse`) |
-| `${BASE_DOMAIN}` | Your chosen base domain |
-| `${ADMIN_EMAIL}` | Admin email address |
-| `${ADMIN_USERNAME}` | Derived from the email (part before `@`) |
-| `${ADMIN_PASSWORD}` | Admin password |
-| `${GIT_PROVIDER}` | `github` or `gitea` |
-| `${CLUSTER_MODE}` | `minikube` or `k3s` |
-| `${GIT_BASE_URL_EXTERNAL}` | External Git URL (may differ from internal for Gitea) |
+| `gitea-http.platform.svc.cluster.local:3000` | OCI registry URL (e.g. `ghcr.io/myorg` or `gitea-http.platform.svc.cluster.local:3000/kuberse`) |
+| `http://gitea-http.platform.svc.cluster.local:3000/marioapgs` | Git server URL (e.g. `https://github.com` or `http://gitea-http.platform.svc.cluster.local:3000`) |
+| `marioapgs` | Organization name (e.g. `myorg` or `kuberse`) |
+| `kuberse.net` | Your chosen base domain |
+| `marioapgs@gmail.com` | Admin email address |
+| `marioapgs` | Derived from the email (part before `@`) |
+| `admin` | Admin password |
+| `gitea` | `github` or `gitea` |
+| `k3s` | `minikube` or `k3s` |
+| `` | External Git URL (may differ from internal for Gitea) |
 
 After this step, all Application manifests contain concrete values instead of template tokens.
 
@@ -185,7 +185,7 @@ In Gitea mode, the platform must be fully self-contained. This phase copies all 
 
 **Images mirrored:** 7 container images (kuberse-cli, kuberse-api, kiops, dev-kit, kuberse-runner, etc.)
 
-The mirror uses `oras copy` (ORAS — OCI Registry As Storage, a CLI tool for copying OCI artifacts between registries) with `--to-plain-http` for the internal registry. After mirroring, chart version placeholders (`${PLATFORM_VERSION}`, `${RUNNERS_VERSION}`, `${BUILDAPP_VERSION}`) are resolved with the actual versions discovered during the copy.
+The mirror uses `oras copy` (ORAS — OCI Registry As Storage, a CLI tool for copying OCI artifacts between registries) with `--to-plain-http` for the internal registry. After mirroring, chart version placeholders (`latest`, `latest`, `latest`) are resolved with the actual versions discovered during the copy.
 
 ### Step 2.6 — Push configuration
 

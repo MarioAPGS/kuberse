@@ -11,8 +11,8 @@ spec:
   project: default
   source:
     chart: runners
-    repoURL: oci://${REGISTRY_URL}/${ORG_NAME}/kuberse/helm/runners
-    targetRevision: ${RUNNERS_VERSION}
+    repoURL: oci://gitea-http.platform.svc.cluster.local:3000/marioapgs/kuberse/helm/runners
+    targetRevision: latest
     helm:
       values: |
         arc-controller:

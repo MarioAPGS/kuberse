@@ -17,7 +17,7 @@ metadata:
     kubernetes-label-selector: app.kubernetes.io/name=cloudbeaver
     argocd-app: cloudbeaver
   links:
-    - url: https://cloudbeaver.${BASE_DOMAIN}
+    - url: https://cloudbeaver.kuberse.net
       title: CloudBeaver (DB UI)
       icon: dashboard
 spec:

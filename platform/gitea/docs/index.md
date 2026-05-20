@@ -59,7 +59,7 @@ Gitea provides a built-in OCI-compatible container registry at the same host (`g
 - **Helm charts** from GHCR to `<gitea-host>/<org>/charts/<plugin-name>:<version>`
 - **Container images** from GHCR to `<gitea-host>/<org>/<image-name>:<tag>`
 
-ArgoCD Applications then pull charts from this internal registry. The `${REGISTRY_URL}` placeholder in plugin manifests resolves to Gitea's address.
+ArgoCD Applications then pull charts from this internal registry. The `gitea-http.platform.svc.cluster.local:3000` placeholder in plugin manifests resolves to Gitea's address.
 
 ### Gitea Actions Runner
 

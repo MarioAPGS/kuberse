@@ -19,7 +19,7 @@ metadata:
     kubernetes-label-selector: app.kubernetes.io/name=vault
     argocd-app: vault
   links:
-    - url: https://vault.${BASE_DOMAIN}
+    - url: https://vault.kuberse.net
       title: Vault UI
       icon: dashboard
     - url: https://developer.hashicorp.com/vault/docs
