@@ -1,8 +1,5 @@
 name: Publish Plugin (Gitea)
 
-# Self-contained Gitea Actions workflow for kuberse-ai.
-# Uses the automatic GITEA_TOKEN (exposed as github.token) for registry auth.
-
 on:
   push:
     branches: [main]
@@ -15,7 +12,7 @@ on:
 
 env:
   REGISTRY_HOST: gitea-http.platform.svc.cluster.local:3000
-  REGISTRY_USER: ${{ github.actor }}
+  REGISTRY_USER: "${{ github.actor }}"
 
 jobs:
   release:
@@ -26,17 +23,14 @@ jobs:
           fetch-depth: 0
 
       - name: Compute registry paths
-        shell: bash
         run: |
           OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           echo "REGISTRY_IMAGES=${REGISTRY_HOST}/${OWNER}" >> "$GITHUB_ENV"
           echo "REGISTRY_CHARTS=oci://${REGISTRY_HOST}/${OWNER}/PLUGIN_NAME-plugin/charts" >> "$GITHUB_ENV"
           echo "REGISTRY_MANIFEST=${REGISTRY_HOST}/${OWNER}/PLUGIN_NAME-plugin" >> "$GITHUB_ENV"
 
-      # ── Compute version ──
       - name: Compute version
         id: semver
-        shell: bash
         run: |
           PREV_TAG=$(git tag -l 'v*' --sort=-v:refname | head -1)
           if [ -z "$PREV_TAG" ]; then
@@ -45,7 +39,6 @@ jobs:
           else
             PREV_VERSION="${PREV_TAG#v}"
           fi
-
           echo "prev-tag=$PREV_TAG" >> "$GITHUB_OUTPUT"
 
           if [ "${{ inputs.force-rebuild }}" = "true" ]; then
@@ -55,7 +48,6 @@ jobs:
           fi
 
           IFS='.' read -r MAJOR MINOR PATCH <<< "$PREV_VERSION"
-
           if [ -n "$PREV_TAG" ]; then
             COMMITS=$(git log "$PREV_TAG"..HEAD --format="%s")
           else
@@ -70,23 +62,18 @@ jobs:
 
           BUMP="none"
           while IFS= read -r msg; do
-            case "$msg" in
-              *"BREAKING CHANGE"*|*!:*) BUMP="major" ;;
-            esac
+            case "$msg" in *"BREAKING CHANGE"*|*!:*) BUMP="major" ;; esac
           done <<< "$COMMITS"
-
           if [ "$BUMP" = "none" ]; then
             while IFS= read -r msg; do
               case "$msg" in feat*) [ "$BUMP" != "major" ] && BUMP="minor" ;; esac
             done <<< "$COMMITS"
           fi
-
           if [ "$BUMP" = "none" ]; then
             while IFS= read -r msg; do
               case "$msg" in fix*|perf*|refactor*) BUMP="patch" ;; esac
             done <<< "$COMMITS"
           fi
-
           [ "$BUMP" = "none" ] && BUMP="patch"
 
           case "$BUMP" in
@@ -97,16 +84,12 @@ jobs:
 
           echo "bump=$BUMP" >> "$GITHUB_OUTPUT"
           echo "version=$MAJOR.$MINOR.$PATCH" >> "$GITHUB_OUTPUT"
-          echo "Bump: $BUMP -> $MAJOR.$MINOR.$PATCH"
 
-      # ── Detect changes ──
       - name: Detect changes
         id: changes
         if: steps.semver.outputs.bump != 'none'
-        shell: bash
         run: |
           PREV_TAG="${{ steps.semver.outputs.prev-tag }}"
-
           if [ "${{ inputs.force-rebuild }}" = "true" ] || [ -z "$PREV_TAG" ]; then
             CHANGED=$(git ls-files)
           else
@@ -137,27 +120,17 @@ jobs:
 
           echo "charts=$CHARTS" >> "$GITHUB_OUTPUT"
           echo "images=$IMAGES" >> "$GITHUB_OUTPUT"
-          echo "Charts: [$CHARTS] | Images: [$IMAGES]"
 
-      # ── Login to registry ──
-      # Gitea exposes the job token as github.token. For the local HTTP registry
-      # we must use --plain-http (helm/oras) and configure docker insecure.
       - name: Registry login
         if: steps.semver.outputs.bump != 'none'
-        shell: bash
         run: |
-
-          # Use the Gitea automatic token (github.token)
           TOKEN="${{ github.token }}"
-
           echo "$TOKEN" | helm registry login "$REGISTRY_HOST" -u "$REGISTRY_USER" --password-stdin --insecure
           echo "$TOKEN" | oras login "$REGISTRY_HOST" -u "$REGISTRY_USER" --password-stdin --insecure
           echo "$TOKEN" | docker login "$REGISTRY_HOST" -u "$REGISTRY_USER" --password-stdin 2>/dev/null || true
 
-      # ── Build and push charts ──
       - name: Build and push charts
         if: steps.semver.outputs.bump != 'none' && steps.changes.outputs.charts != ''
-        shell: bash
         run: |
           for app in ${{ steps.changes.outputs.charts }}; do
             chart_dir="src/$app/chart"
@@ -182,15 +155,12 @@ jobs:
 
             REGISTRY_PATH=$(echo "$REGISTRY_CHARTS" | sed 's|oci://||')
             oras tag --plain-http "${REGISTRY_PATH}/${NAME}:${CHART_VERSION}" latest
-            echo "Pushed chart $NAME:$CHART_VERSION + latest"
           done
 
-      # ── Build and push images ──
       - name: Build and push images
         if: steps.semver.outputs.bump != 'none' && steps.changes.outputs.images != ''
-        shell: bash
         env:
-          VERSION: ${{ steps.semver.outputs.version }}
+          VERSION: "${{ steps.semver.outputs.version }}"
         run: |
           for entry in ${{ steps.changes.outputs.images }}; do
             app=$(echo "$entry" | cut -d/ -f1)
@@ -201,48 +171,22 @@ jobs:
               "src/$app/containers/$img/"
             docker push "$REGISTRY_IMAGES/$img:$VERSION"
             docker push "$REGISTRY_IMAGES/$img:latest"
-            echo "Pushed image $img:$VERSION + latest"
           done
 
-      # ── Publish OCI manifest + git tag ──
       - name: Publish OCI manifest
         if: steps.semver.outputs.bump != 'none'
-        shell: bash
         working-directory: template
         env:
-          VERSION: ${{ steps.semver.outputs.version }}
+          VERSION: "${{ steps.semver.outputs.version }}"
         run: |
           sed -i "s/^  version:.*/  version: $VERSION/" plugin.yaml
-
-          # Resolve chart versions
-          if command -v python3 &>/dev/null; then
-            python3 - <<'PY'
-          import re
-          from pathlib import Path
-          plugin = Path("plugin.yaml")
-          text = plugin.read_text()
-          pattern = re.compile(r"(oci://[^\s]+/charts/([A-Za-z0-9._-]+)):latest")
-          def resolve(m):
-              base, name = m.group(1), m.group(2)
-              p = Path(f"../src/{name}/chart/Chart.yaml")
-              if not p.exists(): return m.group(0)
-              for l in p.read_text().splitlines():
-                  if l.startswith("version:"):
-                      return f"{base}:{l.split(':',1)[1].strip().strip('\"')}"
-              return m.group(0)
-          plugin.write_text(pattern.sub(resolve, text))
-          PY
-          fi
-
           oras push --plain-http "${REGISTRY_MANIFEST}:${VERSION}" .
           oras push --plain-http "${REGISTRY_MANIFEST}:latest" .
-          echo "Published manifest: $VERSION + latest"
 
       - name: Create git tag
         if: steps.semver.outputs.bump != 'none' && steps.semver.outputs.bump != 'rebuild'
-        shell: bash
         env:
-          VERSION: ${{ steps.semver.outputs.version }}
+          VERSION: "${{ steps.semver.outputs.version }}"
         run: |
           git config user.name "gitea-actions[bot]"
           git config user.email "gitea-actions[bot]@noreply.localhost"
