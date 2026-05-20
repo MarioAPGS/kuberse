@@ -5,8 +5,8 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
-      force-rebuild:
-        description: Force rebuild all artifacts without new tag
+      build-all:
+        description: Build all artifacts ignoring change detection (keeps current version)
         type: boolean
         default: false
 
@@ -44,7 +44,7 @@ jobs:
           fi
           echo "prev-tag=$PREV_TAG" >> "$GITHUB_OUTPUT"
 
-          if [ "${{ inputs.force-rebuild }}" = "true" ]; then
+          if [ "${{ inputs.build-all }}" = "true" ]; then
             echo "bump=rebuild" >> "$GITHUB_OUTPUT"
             echo "version=$PREV_VERSION" >> "$GITHUB_OUTPUT"
             exit 0
@@ -93,7 +93,7 @@ jobs:
         if: steps.semver.outputs.bump != 'none'
         run: |
           PREV_TAG="${{ steps.semver.outputs.prev-tag }}"
-          if [ "${{ inputs.force-rebuild }}" = "true" ] || [ -z "$PREV_TAG" ]; then
+          if [ "${{ inputs.build-all }}" = "true" ] || [ -z "$PREV_TAG" ]; then
             CHANGED=$(git ls-files)
           else
             CHANGED=$(git diff --name-only "$PREV_TAG"..HEAD)
@@ -105,7 +105,7 @@ jobs:
             for app_dir in src/*/; do
               app=$(basename "$app_dir")
               if [ -d "src/$app/chart" ]; then
-                if [ "${{ inputs.force-rebuild }}" = "true" ] || echo "$CHANGED" | grep -q "^src/$app/chart/"; then
+                if [ "${{ inputs.build-all }}" = "true" ] || echo "$CHANGED" | grep -q "^src/$app/chart/"; then
                   CHARTS="$CHARTS $app"
                 fi
               fi
@@ -113,7 +113,7 @@ jobs:
                 for img_dir in src/$app/containers/*/; do
                   [ -d "$img_dir" ] || continue
                   img=$(basename "$img_dir")
-                  if [ "${{ inputs.force-rebuild }}" = "true" ] || echo "$CHANGED" | grep -q "^src/$app/containers/$img/"; then
+                  if [ "${{ inputs.build-all }}" = "true" ] || echo "$CHANGED" | grep -q "^src/$app/containers/$img/"; then
                     IMAGES="$IMAGES $app/$img"
                   fi
                 done
