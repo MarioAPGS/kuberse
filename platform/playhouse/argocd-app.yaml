@@ -31,16 +31,19 @@ spec:
             tag: latest
             pullPolicy: IfNotPresent
           dind: true
-          agent: true
+          env:
+            - name: AGENT_MODE
+              value: "true"
           storage: 10Gi
           ssh:
             port: 22
             user: dev
             exposeService: true
-          codeServer:
-            port: 8080
-            auth: none
-          ports: []
+          ports:
+            - name: code
+              port: 8080
+            - name: agent
+              port: 4096
           resources:
             requests:
               cpu: 250m
