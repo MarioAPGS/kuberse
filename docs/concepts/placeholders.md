@@ -9,12 +9,14 @@ Every YAML file in this repository is a **template**. Before the platform can ru
 During `kuberse setup`, the CLI:
 
 1. Clones/forks this repo
-2. Walks every file (excluding `.git/`)
+2. Walks every file (excluding `.git/` and `docs/`)
 3. Replaces all `${PLACEHOLDER}` tokens with values from your configuration
 4. Commits the resolved files
 5. Pushes to your fork
 
 After resolution, ArgoCD reads plain YAML — no templating engine runs at deploy time.
+
+> **Note:** The `detect_unresolved` check also skips `.github/` in addition to `.git/` and `docs/`.
 
 ## Available Placeholders
 

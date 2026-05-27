@@ -62,16 +62,28 @@ The interactive wizard prompts for:
 - **Git provider** — `github` or `gitea`
 - **OCI registry** — defaults to `ghcr.io` for GitHub
 
-### What Setup Does (7 steps)
+### What Setup Does (6 steps)
 
 ```
  1. provider    — Set up git provider (Gitea/GitHub)
  2. registry    — Clone/fork registry, resolve placeholders
  3. artifacts   — Mirror OCI charts/images to internal registry
  4. vault       — Deploy, initialize, and unseal Vault
- 5. seed        — Seed Vault with required secrets
- 6. argocd      — Deploy and configure ArgoCD
- 7. bootstrap   — Apply bootstrap.yaml, wait for services
+ 5. argocd      — Deploy and configure ArgoCD
+ 6. bootstrap   — Apply bootstrap.yaml, wait for services
+```
+
+### Post-Setup Steps (run manually)
+
+```bash
+# Seed Vault with required secrets (prompts for secret values)
+kuberse setup seed
+
+# Configure vault modules
+kuberse jobs vault-module-config
+
+# Provision databases
+kuberse jobs postgres-provisioning
 ```
 
 ## Step 4: Verify

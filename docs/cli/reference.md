@@ -11,7 +11,7 @@
 | `kuberse setup registry` | Clone/fork registry repo and resolve placeholders. |
 | `kuberse setup artifacts` | Mirror OCI charts/images to internal registry. |
 | `kuberse setup vault` | Deploy, initialize, and unseal Vault. |
-| `kuberse setup seed` | Seed Vault with required platform secrets. |
+| `kuberse setup seed` | Seed Vault with required platform secrets. **Not run automatically by `kuberse setup` — must be run explicitly after setup completes.** |
 | `kuberse setup argocd` | Deploy and configure ArgoCD. |
 | `kuberse setup bootstrap` | Apply bootstrap.yaml and wait for core services. |
 | `kuberse update [--artifacts]` | Sync your registry fork with upstream and resolve new placeholders. (`--artifacts` is currently a stub for Gitea.) |
@@ -25,6 +25,8 @@
 | `kuberse secrets seed` | Interactively provide secrets required by platform modules. |
 | `kuberse cli` | Attach to the kuberse-cli pod (wrapper around `kubectl exec`). Use this to re-enter the pod after `init` exits. |
 | `kuberse status` | Show platform status (coming soon). |
+| `kuberse jobs vault-module-config [--timeout N]` | Triggers vault-module-config CronJob (default 180s). |
+| `kuberse jobs postgres-provisioning [--timeout N]` | Triggers postgres-db-provisioner CronJob (default 180s). |
 | `kuberse --version` | Print the installed Kuberse version. |
 
 ---
