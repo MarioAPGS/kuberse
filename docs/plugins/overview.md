@@ -26,8 +26,10 @@ graph LR
 ### Install
 
 ```bash
-kuberse plugin install kuberse-networking
+kuberse plugin install oci://ghcr.io/marioapgs/kuberse-networking-plugin:latest
 ```
+
+The install command is **idempotent**: if the plugin is already installed at the same version, it skips. If a different version is detected, it auto-updates. Use `--no-seed` to skip Vault seeding.
 
 What happens:
 1. CLI pulls the plugin's OCI manifest artifact

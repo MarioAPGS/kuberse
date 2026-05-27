@@ -6,9 +6,16 @@
 |---------|-------------|
 | `kuberse init` | Bootstrap a new platform from your host machine. Supports `minikube` (local) and `k3s` (remote multi-node over SSH) cluster modes. |
 | `kuberse init proxmox` | (Not yet implemented) Provision Debian VMs on a Proxmox host. |
-| `kuberse setup` | Continue bootstrap from inside the kuberse-cli pod. Automatically invoked by `init`; run manually only to retry after a failure. |
+| `kuberse setup` | Continue bootstrap from inside the kuberse-cli pod. Runs all subcommands in order. Idempotent with state tracking. |
+| `kuberse setup provider` | Set up the git provider (Gitea/GitHub). |
+| `kuberse setup registry` | Clone/fork registry repo and resolve placeholders. |
+| `kuberse setup artifacts` | Mirror OCI charts/images to internal registry. |
+| `kuberse setup vault` | Deploy, initialize, and unseal Vault. |
+| `kuberse setup seed` | Seed Vault with required platform secrets. |
+| `kuberse setup argocd` | Deploy and configure ArgoCD. |
+| `kuberse setup bootstrap` | Apply bootstrap.yaml and wait for core services. |
 | `kuberse update [--artifacts]` | Sync your registry fork with upstream and resolve new placeholders. (`--artifacts` is currently a stub for Gitea.) |
-| `kuberse plugin install <ref>` | Install a plugin from an OCI registry or Git repository. |
+| `kuberse plugin install <ref>` | Install a plugin from an OCI registry or Git repository. Idempotent: same version = skip, different version = auto-update. |
 | `kuberse plugin update <name>` | Re-pull the latest artifacts for an installed plugin. |
 | `kuberse plugin list` | List all installed plugins. |
 | `kuberse plugin status <name>` | Show details about a specific plugin. |
@@ -76,8 +83,13 @@ Any other format exits with an error.
 | Flag | Description |
 |------|-------------|
 | `--yes`, `-y` | Skip confirmation prompts. |
+| `--no-seed` | Skip Vault seeding after install. |
 | `--registry-token TEXT` | Token for the source OCI registry. Env: `KUBERSE_REGISTRY_TOKEN` |
 | `--registry-username TEXT` | Username for the source registry. Env: `KUBERSE_REGISTRY_USERNAME` (default: `token`) |
+
+**Idempotency:** If the plugin is already installed at the same version, the command exits successfully without changes. If a different version is detected, the plugin is automatically updated in place.
+
+**Note:** Only the colocated plugin format is supported. Legacy plugin format support has been removed.
 
 **Example:**
 

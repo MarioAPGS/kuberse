@@ -26,8 +26,10 @@ This creates your personal copy of the platform template. All your configuration
 ## Step 2: Initialize the Cluster
 
 ```bash
-kuberse init --provider=github --cluster-mode=minikube
+kuberse init
 ```
+
+Interactive prompts will guide you through configuration (provider, cluster mode, etc.).
 
 This command:
 - Creates a local Kubernetes cluster (Minikube or k3s)
@@ -44,29 +46,32 @@ Inside the CLI pod:
 kuberse setup
 ```
 
+This runs all setup steps in order. You can also run individual steps:
+
+```bash
+kuberse setup provider    # Set up git provider only
+kuberse setup vault       # Deploy Vault only
+kuberse setup --force     # Re-run all steps even if previously completed
+```
+
+Each step is idempotent and tracks completion in `.kuberse-setup-state.json`. If setup fails partway through, re-running `kuberse setup` resumes from where it left off.
+
 The interactive wizard prompts for:
 - **Base domain** — e.g., `mycompany.dev` (needs DNS control)
 - **Admin email** — for certificates and Authentik admin
 - **Git provider** — `github` or `gitea`
 - **OCI registry** — defaults to `ghcr.io` for GitHub
 
-### What Setup Does (14 steps)
+### What Setup Does (7 steps)
 
 ```
- 1. Fork/clone registry repo
- 2. Resolve all ${PLACEHOLDERS} with your config
- 3. Mirror OCI charts to your registry
- 4. Deploy Vault (3-node HA Raft)
- 5. Initialize and unseal Vault
- 6. Enable secrets engine (kv-v2)
- 7. Seed initial secrets
- 8. Configure Vault auth methods
- 9. Deploy ArgoCD
-10. Configure ArgoCD (repo credentials, OIDC)
-11. Apply bootstrap.yaml
-12. Wait for core services healthy
-13. Configure Authentik (admin user, OIDC providers)
-14. Print access URLs and credentials
+ 1. provider    — Set up git provider (Gitea/GitHub)
+ 2. registry    — Clone/fork registry, resolve placeholders
+ 3. artifacts   — Mirror OCI charts/images to internal registry
+ 4. vault       — Deploy, initialize, and unseal Vault
+ 5. seed        — Seed Vault with required secrets
+ 6. argocd      — Deploy and configure ArgoCD
+ 7. bootstrap   — Apply bootstrap.yaml, wait for services
 ```
 
 ## Step 4: Verify
@@ -95,13 +100,13 @@ kubectl get applications -n argocd
 
 ```bash
 # Add Cloudflare Tunnel for public access
-kuberse plugin install kuberse-networking
+kuberse plugin install oci://ghcr.io/marioapgs/kuberse-networking-plugin:latest
 
 # Add monitoring stack
-kuberse plugin install kuberse-observability
+kuberse plugin install oci://ghcr.io/marioapgs/kuberse-observability-plugin:latest
 
 # Add AI services
-kuberse plugin install kuberse-ai
+kuberse plugin install oci://ghcr.io/marioapgs/kuberse-ai-plugin:latest
 ```
 
 ## Local Development Mode
@@ -109,7 +114,7 @@ kuberse plugin install kuberse-ai
 For local testing without a real domain:
 
 ```bash
-kuberse init --cluster-mode=minikube
+kuberse init
 kuberse setup
 # Use domain: kuberse.localhost
 # Access via port-forward or /etc/hosts entries
