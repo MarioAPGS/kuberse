@@ -30,8 +30,10 @@ The editor accepts JSON. The default example includes the main `dev` container, 
 
 ```json
 {
+  "imagePullSecret": "registry-secret",
   "dev": {
     "image": "ghcr.io/marioapgs/dev-kit:dind",
+    "imagePullSecret": "registry-secret",
     "secrets": [
       {
         "path": "finapp",
@@ -101,6 +103,10 @@ The editor accepts JSON. The default example includes the main `dev` container, 
 | `services` | Additional containers such as databases, queues, or caches |
 | `secrets` | Secret values grouped by path |
 | `repos` | Git repositories cloned or made available in the environment |
+| `imagePullSecret` | Optional top-level Docker registry Secret used by default for image pulls and BuildApp repo clone jobs; defaults to `registry-secret` when omitted |
+| `dev.imagePullSecret` | Optional image pull Secret just for the dev workload |
+| `prod.imagePullSecret` | Optional image pull Secret just for the prod workload |
+| `services[].imagePullSecret` | Optional image pull Secret just for that service workload |
 
 ## Validation
 
