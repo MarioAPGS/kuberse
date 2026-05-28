@@ -17,8 +17,44 @@ spec:
       values: |
         vault:
           enabled: true
+          vaultConfig:
+            namespace: platform
+            serviceName: vault
+            address: "http://vault.platform.svc.cluster.local:8200"
+            initSecretName: vault-init-keys
           ingress:
+            enabled: true
+            className: nginx
             host: "vault.kuberse.net"
+            tls:
+              enabled: false
+          moduleConfig:
+            enabled: true
+            schedule: "*/5 * * * *"
+          vault:
+            server:
+              resources:
+                requests:
+                  memory: 256Mi
+                  cpu: 250m
+                limits:
+                  memory: 512Mi
+                  cpu: 500m
+              ha:
+                enabled: true
+                replicas: 3
+              dataStorage:
+                enabled: true
+                size: 10Gi
+                storageClass: null
+            injector:
+              enabled: true
+          vault-secrets-operator:
+            enabled: true
+            defaultVaultConnection:
+              enabled: false
+            csi:
+              enabled: true
   destination:
     server: https://kubernetes.default.svc
     namespace: platform

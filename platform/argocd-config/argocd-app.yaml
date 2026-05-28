@@ -18,16 +18,44 @@ spec:
         argocd-config:
           enabled: true
           ingress:
+            enabled: true
+            className: nginx
             host: "argocd.kuberse.net"
+            tls:
+              enabled: false
           oidc:
+            enabled: true
             url: "https://argocd.kuberse.net"
             issuer: "https://auth.kuberse.net/application/o/argocd/"
+            name: "Authentik"
+            scopes:
+              - openid
+              - profile
+              - email
+              - groups
+          vault:
+            enabled: true
+            host: http://vault.platform.svc.cluster.local:8200
+            serviceAccountName: argocd-server
+            secretPath: "argocd/oidc"
+            role:
+              ttl: "24h"
+              paths:
+                - path: "secret/data/argocd/*"
+                  capabilities: ["create", "read", "update"]
+                - path: "secret/metadata/argocd/*"
+                  capabilities: ["read", "list"]
           authentikOidc:
+            enabled: true
+            name: ArgoCD
+            slug: argocd
             redirectUris:
               - url: "https://argocd.kuberse.net/auth/callback"
                 matchingMode: strict
             application:
               launchUrl: "https://argocd.kuberse.net"
+            vault:
+              secretPath: "argocd/oidc"
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd

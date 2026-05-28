@@ -17,8 +17,62 @@ spec:
       values: |
         authentik:
           enabled: true
+          image:
+            repository: ghcr.io/goauthentik/server
+            tag: "latest"
+            pullPolicy: IfNotPresent
+          server:
+            replicas: 1
+            resources:
+              limits:
+                cpu: 500m
+                memory: 1Gi
+              requests:
+                cpu: 100m
+                memory: 256Mi
+          worker:
+            replicas: 1
+            resources:
+              limits:
+                cpu: 500m
+                memory: 1Gi
+              requests:
+                cpu: 100m
+                memory: 256Mi
           ingress:
+            enabled: true
+            className: nginx
             host: "auth.kuberse.net"
+            tls:
+              enabled: false
+          postgresql:
+            host: postgres.platform.svc.cluster.local
+            port: "5432"
+            name: authentik
+            user: authentik
+          oidcProvisioner:
+            enabled: true
+            image: python:3-alpine
+            discoveryLabel: "kuberse.net/authentik-oidc"
+          dnsHairpin:
+            enabled: true
+            ingressService:
+              name: ingress-nginx-controller
+              namespace: platform
+          vault:
+            enabled: true
+            host: http://vault.platform.svc.cluster.local:8200
+            configSecretPath: "authentik/config"
+            dbSecretPath: "authentik/db"
+            role:
+              ttl: "24h"
+              paths:
+                - path: "secret/data/authentik/*"
+                  capabilities: ["read"]
+                - path: "secret/metadata/authentik/*"
+                  capabilities: ["read", "list"]
+                - path: "secret/data/+/oidc"
+                  capabilities: ["create", "read", "update"]
   destination:
     server: https://kubernetes.default.svc
     namespace: platform

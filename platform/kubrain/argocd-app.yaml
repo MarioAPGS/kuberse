@@ -17,11 +17,41 @@ spec:
       values: |
         kubrain:
           enabled: true
+          replicaCount: 1
           ingress:
+            enabled: true
+            className: nginx
             host: "kubrain.kuberse.net"
+            tls:
+              enabled: false
           image:
             repository: gitea-http.platform.svc.cluster.local:3000/marioapgs/kuberse/img/kubrain
+            tag: latest
             pullPolicy: Always
+          vault:
+            enabled: true
+            host: http://vault.platform.svc.cluster.local:8200
+            serviceAccountName: kubrain
+            secretPath: kubrain/config
+            role:
+              ttl: '24h'
+              paths:
+                - path: 'secret/data/kubrain/*'
+                  capabilities: ['create', 'read', 'update']
+                - path: 'secret/metadata/kubrain/*'
+                  capabilities: ['read', 'list']
+                - path: 'secret/data/*'
+                  capabilities: ['create', 'read', 'update']
+                - path: 'secret/metadata/*'
+                  capabilities: ['read', 'list']
+                - path: 'buildapps/data/*'
+                  capabilities: ['create', 'read', 'update', 'delete', 'list']
+                - path: 'buildapps/metadata/*'
+                  capabilities: ['read', 'list', 'delete']
+                - path: 'sys/policies/acl/*'
+                  capabilities: ['create', 'read', 'update', 'delete']
+                - path: 'auth/kubernetes/role/*'
+                  capabilities: ['create', 'read', 'update', 'delete']
           configFile:
             enabled: true
             content: |
@@ -50,6 +80,13 @@ spec:
               buildapp:
                 chartRepo: oci://gitea-http.platform.svc.cluster.local:3000/marioapgs/kuberse/helm/buildapp
                 chartVersion: latest
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+            requests:
+              cpu: 250m
+              memory: 512Mi
   destination:
     server: https://kubernetes.default.svc
     namespace: platform

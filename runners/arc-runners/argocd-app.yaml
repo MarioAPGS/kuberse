@@ -17,6 +17,37 @@ spec:
       values: |
         arc-runners:
           enabled: true
+          namespace: runners
+          vault:
+            enabled: true
+            host: http://vault.platform.svc.cluster.local:8200
+            serviceAccountName: arc-sa
+            secretPath: "arc/config"
+            role:
+              ttl: "24h"
+              paths:
+                - path: "secret/data/arc/*"
+                  capabilities: ["read"]
+                - path: "secret/metadata/arc/*"
+                  capabilities: ["read", "list"]
+          controller:
+            serviceAccount:
+              name: arc-controller-gha-rs-controller
+              namespace: runners
+          runner:
+            githubConfigSecret: arc-secrets
+            runnerScaleSetName: kuberse-runners
+            minRunners: 0
+            maxRunners: 5
+            image: gitea-http.platform.svc.cluster.local:3000/marioapgs/kuberse/img/kuberse-runner:latest
+            imagePullSecret: registry-secret
+            resources:
+              limits:
+                cpu: "2"
+                memory: 4Gi
+              requests:
+                cpu: 500m
+                memory: 1Gi
           template:
             spec:
               containers:

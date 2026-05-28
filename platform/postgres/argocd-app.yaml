@@ -17,6 +17,32 @@ spec:
       values: |
         postgres:
           enabled: true
+          persistence:
+            enabled: true
+            size: "10Gi"
+            storageClass: ""
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+          dbProvisioner:
+            cronSchedule: "*/5 * * * *"
+            namespaceToSearch: null
+          vault:
+            enabled: true
+            host: http://vault.platform.svc.cluster.local:8200
+            serviceAccountName: postgres-sa
+            secretPath: postgres/config
+            role:
+              ttl: "24h"
+              paths:
+                - path: "secret/data/postgres/*"
+                  capabilities: ["read"]
+                - path: "secret/metadata/postgres/*"
+                  capabilities: ["read", "list"]
   destination:
     server: https://kubernetes.default.svc
     namespace: platform

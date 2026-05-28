@@ -17,6 +17,34 @@ spec:
       values: |
         ingress-nginx:
           enabled: true
+          ingress-nginx:
+            controller:
+              service:
+                type: NodePort
+                nodePorts:
+                  http: 30080
+                  https: 30443
+              hostPort:
+                enabled: false
+              hostNetwork: false
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 90Mi
+                limits:
+                  cpu: 200m
+                  memory: 256Mi
+              ingressClassResource:
+                default: true
+              config:
+                ssl-redirect: "false"
+                force-ssl-redirect: "false"
+                use-forwarded-headers: "true"
+                compute-full-forwarded-for: "true"
+              metrics:
+                enabled: true
+                serviceMonitor:
+                  enabled: false
   destination:
     server: https://kubernetes.default.svc
     namespace: platform

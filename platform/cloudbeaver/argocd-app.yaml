@@ -17,8 +17,34 @@ spec:
       values: |
         cloudbeaver:
           enabled: true
+          image:
+            repository: dbeaver/cloudbeaver
+            tag: "25.2.5"
+            pullPolicy: IfNotPresent
+          deployment:
+            replicas: 1
+          resources:
+            limits:
+              cpu: 500m
+              memory: 1Gi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          persistence:
+            enabled: true
+            size: 2Gi
+            storageClass: ""
           ingress:
+            enabled: true
+            className: nginx
             host: "cloudbeaver.kuberse.net"
+            tls:
+              enabled: false
+          admin:
+            credSecretName: "kuberse-config"
+          dbOnboarding:
+            cronSchedule: "*/5 * * * *"
+            namespaceToSearch: null
   destination:
     server: https://kubernetes.default.svc
     namespace: platform

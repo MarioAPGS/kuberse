@@ -36,7 +36,7 @@ Each category (platform, runners, plugins) has one `argocd-app-of-apps.yaml` tha
 
 ### Level 3: Individual Applications
 
-Each service has its own `argocd-app.yaml` that points at an OCI Helm chart and enables exactly one subchart:
+Each service has its own `argocd-app.yaml` that points at an OCI Helm chart and enables exactly one subchart. The Helm chart still owns the full default values contract, but the registry keeps operationally important values explicit so reviewers can understand the desired cluster state from this repository alone.
 
 ```yaml
 # platform/vault/argocd-app.yaml (simplified)
@@ -54,6 +54,14 @@ spec:
       values: |
         vault:
           enabled: true
+          ingress:
+            enabled: true
+            host: vault.${BASE_DOMAIN}
+          vaultConfig:
+            address: http://vault.platform.svc.cluster.local:8200
+          moduleConfig:
+            enabled: true
+            schedule: "*/5 * * * *"
   destination:
     namespace: platform
   syncPolicy:
@@ -63,6 +71,19 @@ spec:
       - CreateNamespace=true
       - ServerSideApply=true
 ```
+
+### Explicit operational values
+
+`argocd-app.yaml` files intentionally do **not** copy every chart default. They should declare the values that represent an environment or security decision, including:
+
+- Vault integration: `vault.enabled`, Vault host, service account, secret paths, role TTL, and ACL paths/capabilities.
+- Public or internal routing: ingress enablement, class, host, TLS mode, and OIDC URLs.
+- Persistence: storage enablement, requested size, and storage class for stateful services.
+- Runtime sizing: replica counts and resource requests/limits for critical workloads.
+- Images that are selected by the platform environment, especially internal registry images.
+- Reconciliation jobs: schedules, namespace discovery scope, and enablement for platform CronJobs/provisioners.
+
+This creates an operational “lockfile” in the registry: chart authors can evolve defaults in the Helm repository, while this repository records the values the cluster is intentionally running. Secrets and credentials must never be committed here; store them in Vault and reference only Vault paths or Kubernetes Secret names.
 
 ## Sync Waves
 
