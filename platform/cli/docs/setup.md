@@ -270,12 +270,12 @@ Creates Secrets in the `argocd` namespace so ArgoCD can access your Git provider
 
 **GitHub mode:**
 - `github-repo-creds` — Git credentials for cloning the registry repo
-- `github-registry-secret` — Docker config JSON for pulling from `ghcr.io`, replicated to all namespaces via `kubernetes-replicator` (a controller that copies annotated Secrets across namespaces)
+- `registry-secret` — Docker config JSON for pulling from `ghcr.io`, replicated to all namespaces via `kubernetes-replicator` (a controller that copies annotated Secrets across namespaces)
 
 **Gitea mode:**
 - `gitea-repo-creds` — Git credentials for the internal Gitea URL
 - `gitea-oci-creds` — OCI Helm repo credentials with `enableOCI`, `insecure`, and `insecureOCIForceHttp` flags (required because the in-cluster registry is plain HTTP)
-- `github-registry-secret` — Docker config JSON with both Gitea and `ghcr.io` keys, replicated to all namespaces
+- `registry-secret` — Docker config JSON with both Gitea and `ghcr.io` keys, replicated to all namespaces
 
 ### Step 2.12 — Deploy the bootstrap Application
 

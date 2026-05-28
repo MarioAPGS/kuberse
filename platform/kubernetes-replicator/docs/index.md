@@ -18,7 +18,7 @@ The chart is located at `helm/platform/kubernetes-replicator/` and discovered by
 
 ## Why It Exists
 
-The primary use case is replicating the `github-registry-secret` (Docker pull credentials for GitHub Container Registry) from the `argocd` namespace (where it is created during setup) to all other namespaces. Without this, pods in `platform`, `networking`, `observability`, and `apps` would fail to pull private images from `ghcr.io`.
+The primary use case is replicating the `registry-secret` (Docker pull credentials for container registry) from the `argocd` namespace (where it is created during setup) to all other namespaces. Without this, pods in `platform`, `networking`, `observability`, and `apps` would fail to pull private images from `ghcr.io`.
 
 ## How Replication Works
 
@@ -38,16 +38,16 @@ replicator.v1.mittwald.de/replicate-to: "platform,networking,observability"
 
 ## Usage in Kuberse
 
-During the `setup-minikube.sh` bootstrap, the GitHub registry secret is created with:
+During the `setup-minikube.sh` bootstrap, the registry secret is created with:
 
 ```bash
-kubectl create secret docker-registry github-registry-secret \
+kubectl create secret docker-registry registry-secret \
   --namespace argocd \
   --docker-server=ghcr.io \
   --docker-username=$GITHUB_USER \
   --docker-password=$GITHUB_TOKEN
 
-kubectl annotate secret github-registry-secret \
+kubectl annotate secret registry-secret \
   --namespace argocd \
   replicator.v1.mittwald.de/replicate-to='*'
 ```
@@ -71,8 +71,8 @@ destination:
 
 | Module | Interaction |
 |--------|------------|
-| **Kiops** | Consumes replicated `github-registry-secret` for image pulls |
-| **Kuberse API** | Consumes replicated `github-registry-secret` for image pulls |
+| **Kiops** | Consumes replicated `registry-secret` for image pulls |
+| **Kuberse API** | Consumes replicated `registry-secret` for image pulls |
 | **All private image users** | Any module pulling from private registries benefits |
 
 ## Vault Integration
@@ -89,12 +89,12 @@ kubectl get pods -n kube-system | grep replicator
 kubectl logs -f deploy/kubernetes-replicator -n kube-system
 
 # Verify the source secret has the replication annotation
-kubectl get secret github-registry-secret -n argocd -o jsonpath='{.metadata.annotations}'
+kubectl get secret registry-secret -n argocd -o jsonpath='{.metadata.annotations}'
 
 # Check if the secret was replicated to a target namespace
-kubectl get secret github-registry-secret -n platform
-kubectl get secret github-registry-secret -n networking
-kubectl get secret github-registry-secret -n observability
+kubectl get secret registry-secret -n platform
+kubectl get secret registry-secret -n networking
+kubectl get secret registry-secret -n observability
 
 # List all secrets with the replication annotation
 kubectl get secrets --all-namespaces -o json | \
