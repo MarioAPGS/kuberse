@@ -30,7 +30,6 @@ spec:
             repository: gitea-http.platform.svc.cluster.local:3000/marioapgs/kuberse/img/dev-kit
             tag: latest
             pullPolicy: IfNotPresent
-          dind: true
           env:
             - name: AGENT_MODE
               value: "true"
@@ -44,13 +43,14 @@ spec:
               port: 8080
             - name: agent
               port: 4096
+          # Tightened to prevent SystemOOM on 5Gi workers (see buildapp values.yaml).
           resources:
             requests:
-              cpu: 250m
-              memory: 512Mi
+              cpu: 500m
+              memory: 1500Mi
             limits:
               cpu: 2000m
-              memory: 4Gi
+              memory: 2500Mi
 
         services: {}
   destination:

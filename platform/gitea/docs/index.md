@@ -63,7 +63,9 @@ ArgoCD Applications then pull charts from this internal registry. The `gitea-htt
 
 ### Gitea Actions Runner
 
-An `act_runner` pod is deployed alongside Gitea. It registers with the Gitea instance and executes CI workflows when plugin repos are pushed via git-mode install. The runner uses Docker-in-Docker to build container images.
+An `act_runner` pod is deployed alongside Gitea. It registers with the Gitea instance and executes CI workflows when plugin repos are pushed via git-mode install. The runner uses a Docker-in-Docker sidecar to build container images.
+
+> **Resource bounds (chart v0.1.5)**: the runner container is sized at `200m/256Mi → 1/1Gi` and the DinD sidecar at `200m/256Mi → 1500m/1500Mi` (configurable via `runner.resources` and `runner.dockerResources`). Earlier versions left the DinD sidecar unbounded, which could trigger SystemOOM on small workers during heavy builds.
 
 ### Node Hosts DaemonSet
 
