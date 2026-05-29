@@ -169,7 +169,7 @@ The `dbProvisioner.namespaceToSearch` setting controls which namespaces the prov
 | Module | Secret | Label | Connection String Key | Database Created |
 |--------|--------|-------|----------------------|------------------|
 | Kiops | `kiops-secrets` (VaultStaticSecret) | `pgdb: PG_CONNECTION_STRING` | `PG_CONNECTION_STRING` | kiops DB |
-| Authentik | `authentik-db-secrets` (VaultStaticSecret) | `pgdb: PG_CONNECTION_STRING` | `PG_CONNECTION_STRING` | authentik DB |
+| Authentik | `authentik-secrets` (VaultStaticSecret) | `pgdb: PG_CONNECTION_STRING` | `PG_CONNECTION_STRING` | authentik DB |
 | Kubrain | `kubrain-secrets` (VaultStaticSecret) | `pgdb: PG_CONNECTION_STRING` | `PG_CONNECTION_STRING` | kubrain DB |
 
 Each module stores its `PG_CONNECTION_STRING` in Vault (e.g. `secret/kiops/config`). The VSO syncs it to a Kubernetes Secret with the `pgdb` label, and the provisioner automatically creates the database and user.

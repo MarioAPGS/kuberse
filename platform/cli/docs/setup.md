@@ -246,11 +246,13 @@ Writes the initial secrets that platform components need on first boot:
 | Vault path | Keys | Used by |
 |------------|------|---------|
 | `secret/postgres/config` | `POSTGRES_USER`, `POSTGRES_PASSWORD` | PostgreSQL chart |
-| `secret/authentik/config` | `AUTHENTIK_BOOTSTRAP_EMAIL`, `AUTHENTIK_BOOTSTRAP_PASSWORD` | Authentik chart |
+| `secret/authentik/main` | `PG_CONNECTION_STRING`, `AUTHENTIK_POSTGRESQL__PASSWORD` | Authentik chart (DB credentials seeded automatically; `AUTHENTIK_SECRET_KEY` + `AUTHENTIK_BOOTSTRAP_TOKEN` on the same path come from the interactive `secrets-expected.json` step) |
+| `secret/kubrain/config` | `PG_CONNECTION_STRING` | Kubrain chart |
 
-Both use the same credentials from your init prompts:
+All use the same credentials from your init prompts:
 - `POSTGRES_USER` = admin username (derived from email)
-- `POSTGRES_PASSWORD` = `AUTHENTIK_BOOTSTRAP_PASSWORD` = the admin password you chose
+- `POSTGRES_PASSWORD` = `AUTHENTIK_POSTGRESQL__PASSWORD` = the admin password you chose
+- The Authentik first-boot admin user (`AUTHENTIK_BOOTSTRAP_EMAIL` / `AUTHENTIK_BOOTSTRAP_PASSWORD`) is sourced from the cluster-wide `kuberse-config` Secret, not from Vault.
 
 Values are sent via stdin as JSON to avoid shell metacharacter issues with special characters in passwords.
 

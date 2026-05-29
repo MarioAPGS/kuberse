@@ -146,15 +146,11 @@ The `+` wildcard matches a single path segment, so `secret/data/argocd/oidc`, `s
 Before deploying Authentik, store the required secrets in Vault:
 
 ```bash
-# Config secrets (SECRET_KEY and BOOTSTRAP_TOKEN)
+# All Authentik secrets live in a single Vault path
 kubectl exec -it vault-0 -n platform -- vault kv put \
-  secret/authentik/config \
+  secret/authentik/main \
   AUTHENTIK_SECRET_KEY="$(openssl rand -hex 32)" \
-  AUTHENTIK_BOOTSTRAP_TOKEN="$(openssl rand -hex 32)"
-
-# Database secrets
-kubectl exec -it vault-0 -n platform -- vault kv put \
-  secret/authentik/db \
+  AUTHENTIK_BOOTSTRAP_TOKEN="$(openssl rand -hex 32)" \
   PG_CONNECTION_STRING="postgresql://authentik:your-password@postgres.platform.svc.cluster.local:5432/authentik" \
   AUTHENTIK_POSTGRESQL__PASSWORD="your-password"
 ```

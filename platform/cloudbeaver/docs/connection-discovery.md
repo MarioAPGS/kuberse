@@ -179,7 +179,7 @@ The `dbOnboarding.namespaceToSearch` setting controls which namespaces the CronJ
 
 | Module | Secret | Labels | Database Registered |
 |--------|--------|--------|-------------------|
-| Authentik | `authentik-db-secrets` (VaultStaticSecret) | `cbdb: PG_CONNECTION_STRING`, `pgdb: PG_CONNECTION_STRING` | authentik DB |
+| Authentik | `authentik-secrets` (VaultStaticSecret) | `cbdb: PG_CONNECTION_STRING`, `pgdb: PG_CONNECTION_STRING` | authentik DB |
 | Kubrain | `kubrain-secrets` (VaultStaticSecret) | `cbdb: PG_CONNECTION_STRING`, `pgdb: PG_CONNECTION_STRING` | kubrain DB |
 
 These modules use the dual-label pattern, so a single Secret triggers both PostgreSQL database provisioning and CloudBeaver connection registration.

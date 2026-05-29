@@ -28,16 +28,15 @@ The key architectural feature is **decentralized OIDC provisioning**: each modul
 graph TB
     subgraph "Platform Namespace"
         subgraph "Authentik Pod"
-            INIT["Init Container<br/>wait-for-secrets"]
+            INIT["Init Container<br/>wait-for-db"]
             SERVER["Authentik Server<br/>(Django, port 9000)"]
             WORKER["Authentik Worker<br/>(Celery)"]
         end
         REDIS["Redis 7<br/>(cache/broker)"]
-        
+
         subgraph "Secrets"
             KC["kuberse-config<br/>(admin_password, admin_email)"]
-            CS["authentik-config-secrets<br/>(SECRET_KEY, BOOTSTRAP_TOKEN)"]
-            DS["authentik-db-secrets<br/>(PG_CONNECTION_STRING, PG_PASSWORD)"]
+            US["authentik-secrets<br/>(SECRET_KEY, BOOTSTRAP_TOKEN,<br/>PG_CONNECTION_STRING, PG_PASSWORD)<br/>labels: pgdb, cbdb"]
         end
 
         subgraph "OIDC Provisioner"
@@ -50,8 +49,7 @@ graph TB
     end
 
     subgraph "Vault"
-        VC1["secret/authentik/config"]
-        VC2["secret/authentik/db"]
+        VMAIN["secret/authentik/main"]
         VO["secret/argocd/oidc<br/>secret/grafana/oidc<br/>secret/kiops/oidc"]
     end
 
@@ -59,14 +57,12 @@ graph TB
         OIDC_CM["ConfigMap<br/>label: kuberse.net/authentik-oidc=true<br/>(ArgoCD, Grafana, Kiops...)"]
     end
 
-    VC1 -->|"VSO syncs"| CS
-    VC2 -->|"VSO syncs<br/>(pgdb + cbdb labels)"| DS
+    VMAIN -->|"VSO syncs<br/>(pgdb + cbdb labels<br/>scoped to PG_CONNECTION_STRING)"| US
     KC -->|"admin_password<br/>admin_email"| SERVER
-    CS -->|"SECRET_KEY<br/>BOOTSTRAP_TOKEN"| SERVER
-    DS -->|"PG password"| SERVER
-    DS -->|"PG password"| WORKER
+    US -->|"SECRET_KEY<br/>BOOTSTRAP_TOKEN<br/>PG password"| SERVER
+    US -->|"SECRET_KEY<br/>BOOTSTRAP_TOKEN<br/>PG password"| WORKER
 
-    INIT -->|"waits for"| DS
+    INIT -->|"waits for"| US
     INIT -->|"then starts"| SERVER
 
     SERVER --> REDIS
@@ -95,13 +91,12 @@ graph TB
 | Job | `authentik-oidc-provisioner` | ArgoCD PostSync hook -- creates OIDC providers and writes creds to Vault |
 | VaultConnection | `vault-connection` | Connection to Vault server |
 | VaultAuth | `authentik-auth` | Kubernetes auth with `authentik-role` |
-| VaultStaticSecret | `authentik-config-vault` | Syncs `secret/authentik/config` to `authentik-config-secrets` |
-| VaultStaticSecret | `authentik-db-vault` | Syncs `secret/authentik/db` to `authentik-db-secrets` (dual-labeled `pgdb` + `cbdb`) |
+| VaultStaticSecret | `authentik-vault` | Syncs `secret/authentik/main` to `authentik-secrets` (dual-labeled `pgdb` + `cbdb`, both pointing to the `PG_CONNECTION_STRING` key) |
 | ConfigMap | `authentik-vault-role` | Labeled `vault: setup-creds` for Vault CronJob discovery |
 
 ## Credential Sources
 
-Authentik requires credentials from **three sources**:
+Authentik requires credentials from **two sources**:
 
 ### 1. Shared `kuberse-config` Secret
 
@@ -114,25 +109,18 @@ Created during the platform setup (CLI `kuberse setup`), this shared secret prov
 
 These values are set by the operator during the initial `kuberse setup` flow. Authentik uses them to create the initial admin user on first boot.
 
-### 2. Vault: `secret/authentik/config`
+### 2. Vault: `secret/authentik/main`
 
-Synced to K8s Secret `authentik-config-secrets`:
-
-| Key | Environment Variable | Description |
-|-----|---------------------|-------------|
-| `AUTHENTIK_SECRET_KEY` | `AUTHENTIK_SECRET_KEY` | Django signing key (50+ chars) |
-| `AUTHENTIK_BOOTSTRAP_TOKEN` | `AUTHENTIK_BOOTSTRAP_TOKEN` | API token used by the OIDC provisioner Job |
-
-### 3. Vault: `secret/authentik/db`
-
-Synced to K8s Secret `authentik-db-secrets` with dual labels (`pgdb` + `cbdb`):
+Synced to a single K8s Secret `authentik-secrets` with dual labels (`pgdb` + `cbdb`) scoped to the `PG_CONNECTION_STRING` key:
 
 | Key | Environment Variable | Description |
 |-----|---------------------|-------------|
-| `PG_CONNECTION_STRING` | (used by provisioners) | `postgresql://authentik:pass@postgres.platform:5432/authentik` |
-| `AUTHENTIK_POSTGRESQL__PASSWORD` | `AUTHENTIK_POSTGRESQL__PASSWORD` | PostgreSQL password for Authentik |
+| `AUTHENTIK_SECRET_KEY` | `AUTHENTIK_SECRET_KEY` | Django signing key (50+ chars). **Interactive** seed (via `secrets-expected.json`). |
+| `AUTHENTIK_BOOTSTRAP_TOKEN` | `AUTHENTIK_BOOTSTRAP_TOKEN` | API token used by the OIDC provisioner Job. **Interactive** seed. |
+| `PG_CONNECTION_STRING` | (used by provisioners + wait-for-db) | `postgresql://authentik:pass@postgres.platform:5432/authentik`. Seeded **automatically** by `kuberse setup`. |
+| `AUTHENTIK_POSTGRESQL__PASSWORD` | `AUTHENTIK_POSTGRESQL__PASSWORD` | PostgreSQL password for Authentik. Seeded automatically. |
 
-The `pgdb` label triggers automatic database creation via the PostgreSQL provisioner CronJob. The `cbdb` label triggers automatic connection registration in CloudBeaver.
+The `pgdb` label triggers automatic database creation via the PostgreSQL provisioner CronJob. The `cbdb` label triggers automatic connection registration in CloudBeaver. Both labels point to `PG_CONNECTION_STRING`, so the other keys stay invisible to the provisioners.
 
 ## Startup Sequence
 
@@ -140,18 +128,18 @@ The `pgdb` label triggers automatic database creation via the PostgreSQL provisi
 sequenceDiagram
     participant Vault as Vault
     participant VSO as VSO
-    participant DS as K8s Secret<br/>authentik-db-secrets
-    participant Init as Init Container<br/>wait-for-secrets
+    participant DS as K8s Secret<br/>authentik-secrets
+    participant Init as Init Container<br/>wait-for-db
     participant Server as Authentik Server
     participant BP as Blueprints
     participant Job as OIDC Provisioner Job
 
-    VSO->>Vault: Read secret/authentik/db
-    VSO->>DS: Create authentik-db-secrets
+    VSO->>Vault: Read secret/authentik/main
+    VSO->>DS: Create authentik-secrets
 
-    Init->>Init: kubectl get secret authentik-db-secrets
-    Note over Init: Polls every 5s until secret exists
-    Init->>Server: Secret found, exit 0
+    Init->>Init: psql SELECT 1 against PG_CONNECTION_STRING
+    Note over Init: kubelet blocks pod start until secret exists;<br/>container then polls DB every 5s
+    Init->>Server: DB reachable, exit 0
 
     Server->>Server: Start Django + apply blueprints
     BP->>Server: Create groups (admin, developer)<br/>Create groups scope mapping
@@ -208,8 +196,7 @@ No manual intervention is needed. The CrashLoopBackOff resolves automatically.
 | `ingress.host` | `auth.kuberse.net` | Public hostname |
 | `postgresql.host` | `postgres.platform.svc.cluster.local` | PostgreSQL host |
 | `postgresql.name` | `authentik` | Database name |
-| `vault.configSecretPath` | `authentik/config` | Vault path for config secrets |
-| `vault.dbSecretPath` | `authentik/db` | Vault path for DB secrets |
+| `vault.secretPath` | `authentik/main` | Single Vault path for all Authentik secrets |
 | `oidcProvisioner.discoveryLabel` | `kuberse.net/authentik-oidc` | Label used to discover OIDC ConfigMaps |
 
 ## Debugging
@@ -225,16 +212,16 @@ kubectl logs -f deploy/authentik-server -n platform
 kubectl logs -f deploy/authentik-worker -n platform
 
 # Init container logs (if stuck in Init)
-kubectl logs deploy/authentik-server -n platform -c wait-for-secrets
+kubectl logs deploy/authentik-server -n platform -c wait-for-db
 
 # OIDC provisioner Job logs
 kubectl logs job/authentik-oidc-provisioner -n platform
 
 # Check if secrets exist
-kubectl get secret authentik-config-secrets authentik-db-secrets kuberse-config -n platform
+kubectl get secret authentik-secrets kuberse-config -n platform
 
 # Check VaultStaticSecret sync status
-kubectl describe vaultstaticsecret authentik-config-vault authentik-db-vault -n platform
+kubectl describe vaultstaticsecret authentik-vault -n platform
 
 # Verify Authentik is healthy
 kubectl exec -it deploy/authentik-server -n platform -- ak healthcheck
@@ -244,7 +231,7 @@ kubectl exec -it deploy/authentik-server -n platform -- ak healthcheck
 
 | Symptom | Likely Cause | Fix |
 |---------|-------------|-----|
-| Pod stuck in `Init:0/1` | `authentik-db-secrets` doesn't exist | Check Vault sync: `kubectl describe vaultstaticsecret authentik-db-vault -n platform` |
+| Pod stuck in `Init:0/1` | `authentik-secrets` doesn't exist | Check Vault sync: `kubectl describe vaultstaticsecret authentik-vault -n platform` |
 | OIDC provisioner fails | Authentik not ready or token invalid | Check logs: `kubectl logs job/authentik-oidc-provisioner -n platform` |
 | "Connection refused" from OIDC clients | DNS hairpin not configured | Check CoreDNS: `kubectl get cm coredns -n kube-system -o yaml` |
 | OIDC login redirects to Cloudflare Access | DNS hairpin missing/stale IP | Re-run provisioner or check ingress controller ClusterIP |

@@ -300,8 +300,7 @@ Before the platform is fully operational, the following secrets must exist in Va
 | Vault Path | Required Keys | Consumer | Notes |
 |------------|--------------|----------|-------|
 | `secret/postgres/config` | `POSTGRES_USER`, `POSTGRES_PASSWORD` | PostgreSQL | Must exist before PostgreSQL starts |
-| `secret/authentik/config` | `AUTHENTIK_SECRET_KEY`, `AUTHENTIK_BOOTSTRAP_TOKEN` | Authentik | `SECRET_KEY`: 50+ hex chars. `BOOTSTRAP_TOKEN`: API token for provisioner |
-| `secret/authentik/db` | `PG_CONNECTION_STRING`, `AUTHENTIK_POSTGRESQL__PASSWORD` | Authentik + provisioners | Format: `postgresql://authentik:<pass>@postgres.platform.svc.cluster.local:5432/authentik` |
+| `secret/authentik/main` | `AUTHENTIK_SECRET_KEY`, `AUTHENTIK_BOOTSTRAP_TOKEN`, `PG_CONNECTION_STRING`, `AUTHENTIK_POSTGRESQL__PASSWORD` | Authentik + provisioners | All Authentik secrets on a single path; PG keys also drive pgdb + cbdb provisioning. `PG_CONNECTION_STRING` format: `postgresql://authentik:<pass>@postgres.platform.svc.cluster.local:5432/authentik` |
 | `secret/gitea/config` | `admin_username`, `admin_password`, `admin_email` | Gitea (when vault.enabled) | Optional during bootstrap |
 | `secret/kubrain/config` | `PG_CONNECTION_STRING`, `GITHUB_TOKEN`, `GITEA_URL`, `GITEA_TOKEN` | Kubrain | |
 
