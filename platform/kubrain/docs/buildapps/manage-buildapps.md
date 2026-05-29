@@ -17,6 +17,16 @@ The Edit form uses the same shape as Create — the backend translates the Helm-
 
 After saving, ArgoCD applies the desired state through GitOps sync.
 
+### Scale-to-zero by omission
+
+`dev`, `prod` and each entry under `services` are independent and all optional. Removing one of them from the Edit form deletes the corresponding workload natively: the buildapp chart renders no resources for the omitted block, and ArgoCD prunes anything previously created. There is no separate "disable" toggle — the absence of the block IS the disable.
+
+This lets you, for example:
+
+- Edit a buildapp to drop `prod` while keeping `dev` for active development.
+- Remove a stale service (e.g. `postgres`) without touching the others.
+- Send an empty values body to scale the whole environment to zero while keeping its identity, secrets policy and namespace.
+
 ### Adding new secrets while editing
 
 You can add new secret entries in the Edit modal — any entry that includes `key`, `value` and `path` will be written to Vault (merging with existing keys under the same path). Entries without `key`/`value` are left untouched.
