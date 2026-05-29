@@ -13,7 +13,13 @@ BuildApps are managed from the Catalog after creation. Select a BuildApp entity 
 
 BuildApp entities expose an edit action in the details panel. The edit modal loads the current BuildApp values, lets you update them, and saves the changes.
 
+The Edit form uses the same shape as Create — the backend translates the Helm-native representation stored in ArgoCD back to the shorthand format on load, so what you see is what Create accepts. The only difference is that secret values do not round-trip: when you load values for editing, secret entries appear with their `path` (and optional `envFile`) but without `key`/`value`, because those were already written to Vault at creation time.
+
 After saving, ArgoCD applies the desired state through GitOps sync.
+
+### Adding new secrets while editing
+
+You can add new secret entries in the Edit modal — any entry that includes `key`, `value` and `path` will be written to Vault (merging with existing keys under the same path). Entries without `key`/`value` are left untouched.
 
 Use this when you need to:
 
