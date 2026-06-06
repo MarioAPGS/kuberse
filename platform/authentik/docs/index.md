@@ -4,7 +4,7 @@
 
 | Property | Value |
 |----------|-------|
-| **Chart** | `platform/charts/authentik/` |
+| **Chart** | `platform/authentik/` |
 | **Sync Wave** | 1 |
 | **Namespace** | `platform` |
 | **Image** | `ghcr.io/goauthentik/server:latest` |

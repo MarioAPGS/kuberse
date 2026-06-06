@@ -20,7 +20,6 @@ metadata:
 spec:
   targets:
     - ./platform/**/catalog-info.yaml
-    - ./runners/**/catalog-info.yaml
     - ./plugins/**/catalog-info.yaml
 
 ---

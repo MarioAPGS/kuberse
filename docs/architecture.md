@@ -62,7 +62,7 @@ graph TB
 
 1. **Vault-first** — Vault is deployed and seeded by the CLI *before* ArgoCD exists. This eliminates secret race conditions. Every other component pulls secrets via `VaultStaticSecret` CRDs.
 
-2. **Umbrella chart pattern** — One OCI Helm chart per category (platform, runners, buildapp) with all subcharts disabled by default. Each ArgoCD Application enables exactly one subchart. This means adding a service requires zero chart changes — only a new ArgoCD Application manifest in this repo.
+2. **Umbrella chart pattern** — One OCI Helm chart per category (platform, buildapp) with all subcharts disabled by default. Each ArgoCD Application enables exactly one subchart. This means adding a service requires zero chart changes — only a new ArgoCD Application manifest in this repo.
 
 3. **Three-level app-of-apps** — `bootstrap.yaml` → category app-of-apps → individual Applications. ArgoCD auto-discovers new services by scanning directories.
 
@@ -159,4 +159,3 @@ Internet
 | Tunnel | Cloudflare Tunnel | No open ports, DDoS protection, Zero Trust |
 | Monitoring | Grafana + Loki + Mimir | Unified logs/metrics, lightweight |
 | Charts | Helm + OCI | Versioned, reproducible, registry-native |
-| CI | GitHub Actions | Native, with self-hosted runners in-cluster |

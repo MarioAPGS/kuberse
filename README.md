@@ -42,7 +42,6 @@ Every file in this repo is a template. Placeholders like `${BASE_DOMAIN}`, `${OR
 ├── plugins/                    # Installed plugin manifests
 │   ├── _template/              # Plugin starter template
 │   └── _app/                   # Kubrain remote UI template
-├── runners/                    # GitHub Actions self-hosted runners
 ├── scripts/                    # Utility scripts
 └── docs/                       # Full documentation
 ```

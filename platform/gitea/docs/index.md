@@ -4,7 +4,7 @@
 
 | Property | Value |
 |----------|-------|
-| **Chart** | `platform/charts/gitea/` |
+| **Chart** | `platform/gitea/` |
 | **Sync Wave** | 1 |
 | **Namespace** | `platform` |
 | **Image** | `gitea/gitea:1.23.7-rootless` |

@@ -4,7 +4,7 @@
 
 | Property | Value |
 |----------|-------|
-| **Chart** | `platform/charts/cloudbeaver/` |
+| **Chart** | `platform/cloudbeaver/` |
 | **Sync Wave** | 1 |
 | **Namespace** | `platform` |
 | **App Version** | 25.2.5 |

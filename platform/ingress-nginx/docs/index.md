@@ -4,7 +4,7 @@
 
 | Property | Value |
 |----------|-------|
-| **Chart** | `platform/charts/ingress-nginx/` (wrapper, no custom templates) |
+| **Chart** | `platform/ingress-nginx/` (wrapper, no custom templates) |
 | **Sync Wave** | 1 |
 | **Namespace** | `platform` |
 | **Upstream Chart** | `ingress-nginx` v4.11.3 from `https://kubernetes.github.io/ingress-nginx` |

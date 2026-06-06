@@ -12,6 +12,5 @@ metadata:
 spec:
   targets:
     - ./platform/**/kuberse-entity.yaml
-    - ./runners/**/kuberse-entity.yaml
     - ./plugins/**/kuberse-entity.yaml
     - ./plugins/**/kuberse-org.yaml

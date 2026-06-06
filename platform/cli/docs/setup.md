@@ -180,7 +180,6 @@ In Gitea mode, the platform must be fully self-contained. This phase copies all 
 
 **Charts mirrored:**
 - `platform` (the main umbrella chart)
-- `runners`
 - `buildapp`
 
 **Images mirrored:** 7 container images (kuberse-cli, kuberse-api, kiops, dev-kit, kuberse-runner, etc.)
@@ -291,7 +290,6 @@ bootstrap.yaml
         ├── argocd/platform/authentik/argocd-app.yaml    (new deploy)
         ├── argocd/platform/ingress-nginx/argocd-app.yaml
         └── ... (all other platform components)
-  └── argocd/runners/argocd-app-of-apps.yaml
   └── argocd/plugins/<name>/argocd-app-of-apps.yaml
 ```
 
@@ -301,7 +299,7 @@ ArgoCD deploys components respecting sync waves:
 - Wave -1: Namespaces
 - Wave 0: App-of-apps, kubernetes-replicator
 - Wave 1: All platform components (vault, ingress-nginx, postgres, authentik, etc.)
-- Wave 2: Plugins, runners
+- Wave 2: Plugins
 
 ### Step 2.13 — Trigger module-config Job
 

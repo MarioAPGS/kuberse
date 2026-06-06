@@ -35,7 +35,6 @@ docs/                   # Full platform documentation
   plugins/              # Plugin system overview
   cli/                  # CLI reference, troubleshooting
 cli/docs/               # Legacy location (kept for backward compat)
-runners/                # Self-hosted runner configs
 scripts/                # Utility scripts
 ```
 

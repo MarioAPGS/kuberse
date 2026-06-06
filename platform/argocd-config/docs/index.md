@@ -4,7 +4,7 @@
 
 | Property | Value |
 |----------|-------|
-| **Chart** | `platform/charts/argocd-config/` |
+| **Chart** | `platform/argocd-config/` |
 | **Sync Wave** | 1 |
 | **Namespace** | `argocd` |
 | **Dependencies** | ArgoCD (installed during bootstrap), Vault (Wave 1), Authentik (Wave 1), Ingress NGINX (Wave 1) |

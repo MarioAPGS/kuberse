@@ -13,7 +13,6 @@ graph TD
     Bootstrap["bootstrap.yaml<br/><i>Root Application</i>"]
     
     Bootstrap --> PlatformAoA["platform/argocd-app-of-apps.yaml<br/><i>Discovers platform services</i>"]
-    Bootstrap --> RunnersAoA["runners/argocd-app-of-apps.yaml<br/><i>Discovers runner configs</i>"]
     Bootstrap --> PluginAoA["plugins/*/argocd-app-of-apps.yaml<br/><i>Discovers installed plugins</i>"]
     
     PlatformAoA --> Vault["vault/argocd-app.yaml"]
@@ -32,7 +31,7 @@ The root Application. Created by `kuberse setup` as the final step. It points at
 
 ### Level 2: App-of-Apps
 
-Each category (platform, runners, plugins) has one `argocd-app-of-apps.yaml` that scans its directory for subdirectories containing `argocd-app.yaml` files.
+Each category (platform, plugins) has one `argocd-app-of-apps.yaml` that scans its directory for subdirectories containing `argocd-app.yaml` files.
 
 ### Level 3: Individual Applications
 

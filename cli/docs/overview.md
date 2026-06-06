@@ -85,7 +85,7 @@ Kuberse uses ArgoCD sync waves to control deployment order:
 | -1 | Namespaces | Must exist before any resource targeting them |
 | 0 | App-of-apps, Replicator | Coordination layer that spawns child Applications |
 | 1 | Platform components | Core services (vault, ingress-nginx, postgres, authentik, etc.) |
-| 2 | Plugins, runners | Higher-level workloads that depend on platform services |
+| 2 | Plugins | Higher-level workloads that depend on platform services |
 
 Lower waves fully sync before higher waves begin, guaranteeing that dependencies are healthy before dependents roll out.
 

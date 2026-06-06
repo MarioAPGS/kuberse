@@ -4,7 +4,7 @@
 
 | Property | Value |
 |----------|-------|
-| **Chart** | `platform/charts/vault/` |
+| **Chart** | `platform/vault/` |
 | **Sync Wave** | 1 |
 | **Namespace** | `platform` |
 | **Dependencies** | Namespaces (Wave -1), Ingress NGINX (Wave 1) |

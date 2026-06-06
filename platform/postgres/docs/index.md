@@ -4,7 +4,7 @@
 
 | Property | Value |
 |----------|-------|
-| **Chart** | `platform/charts/postgres/` |
+| **Chart** | `platform/postgres/` |
 | **Sync Wave** | 1 |
 | **Namespace** | `platform` |
 | **Dependencies** | Namespaces (Wave -1), Vault (Wave 1) |
