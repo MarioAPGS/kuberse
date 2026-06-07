@@ -15,7 +15,7 @@ metadata:
   description: >
     CloudBeaver web database manager -- browser-based tool for managing databases.
   annotations:
-    backstage.io/techdocs-ref: url:${GIT_BASE_URL}/${ORG_NAME}/kuberse-helm/tree/main/helm/platform/cloudbeaver
+    backstage.io/techdocs-ref: url:${GIT_BASE_URL}/kuberse-helm/tree/main/helm/platform/cloudbeaver
     backstage.io/kubernetes-id: cloudbeaver
     backstage.io/kubernetes-namespace: platform
     backstage.io/kubernetes-label-selector: app.kubernetes.io/name=cloudbeaver

@@ -10,7 +10,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: ${GIT_BASE_URL}/${ORG_NAME}/kuberse
+    repoURL: ${GIT_BASE_URL}/kuberse
     targetRevision: main
     path: platform
     directory:

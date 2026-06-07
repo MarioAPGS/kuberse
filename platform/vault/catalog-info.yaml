@@ -17,7 +17,7 @@ metadata:
     platform secrets, KV v2 mounts (`secret/` and `buildapps/`),
     Kubernetes auth, dynamic policy/role creation, and Vault Secrets Operator.
   annotations:
-    backstage.io/techdocs-ref: url:${GIT_BASE_URL}/${ORG_NAME}/kuberse-helm/tree/main/helm/platform/vault
+    backstage.io/techdocs-ref: url:${GIT_BASE_URL}/kuberse-helm/tree/main/helm/platform/vault
     backstage.io/kubernetes-id: vault
     backstage.io/kubernetes-namespace: platform
     backstage.io/kubernetes-label-selector: app.kubernetes.io/name=vault
@@ -98,7 +98,7 @@ metadata:
     `vault: setup-creds` and provisions Vault ACL policies and Kubernetes
     auth roles for every platform module. Runs every 5 minutes.
   annotations:
-    backstage.io/techdocs-ref: url:${GIT_BASE_URL}/${ORG_NAME}/kuberse-helm/tree/main/helm/platform/vault
+    backstage.io/techdocs-ref: url:${GIT_BASE_URL}/kuberse-helm/tree/main/helm/platform/vault
     backstage.io/kubernetes-id: vault-module-config
     backstage.io/kubernetes-namespace: platform
     backstage.io/kubernetes-label-selector: app=vault-module-config
