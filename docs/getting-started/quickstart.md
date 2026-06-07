@@ -17,8 +17,9 @@ Deploy the full Kuberse platform from zero to running in under 15 minutes.
 ## Step 1: Fork the Registry
 
 ```bash
-# GitHub mode
-gh repo fork kuberse/kuberse-registry --org=my-org --clone=false
+# GitHub mode (fork happens automatically during kuberse init)
+# Or manually:
+gh repo fork MarioAPGS/kuberse --org=my-org --clone=false
 ```
 
 This creates your personal copy of the platform template. All your configuration will live here.

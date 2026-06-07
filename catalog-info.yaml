@@ -6,7 +6,7 @@ metadata:
   annotations:
     backstage.io/techdocs-ref: dir:.
   links:
-    - url: http://gitea-http.platform.svc.cluster.local:3000/marioapgs/kuberse
+    - url: ${GIT_BASE_URL}/${ORG_NAME}/kuberse
       title: Registry Repo
 spec:
   owner: group:default/admins

@@ -11,10 +11,10 @@
 | `kuberse setup registry` | Clone/fork registry repo and resolve placeholders. |
 | `kuberse setup artifacts` | Mirror OCI charts/images to internal registry. |
 | `kuberse setup vault` | Deploy, initialize, and unseal Vault. |
-| `kuberse setup seed` | Seed Vault with required platform secrets. **Not run automatically by `kuberse setup` — must be run explicitly after setup completes.** |
+| `kuberse setup seed` | Seed Vault with required platform secrets. Runs automatically at the end of `kuberse setup`. |
 | `kuberse setup argocd` | Deploy and configure ArgoCD. |
 | `kuberse setup bootstrap` | Apply bootstrap.yaml and wait for core services. |
-| `kuberse update [--artifacts]` | Sync your registry fork with upstream and resolve new placeholders. (`--artifacts` is currently a stub for Gitea.) |
+| `kuberse update` | Sync your registry fork with upstream, resolve new placeholders, and push. The `upstream` remote is always configured. |
 | `kuberse plugin install <ref>` | Install a plugin from an OCI registry or Git repository. Idempotent: same version = skip, different version = auto-update. |
 | `kuberse plugin update <name>` | Re-pull the latest artifacts for an installed plugin. |
 | `kuberse plugin list` | List all installed plugins. |
@@ -47,14 +47,18 @@ Bootstraps a new Kuberse platform. You run this from your local machine.
 ### `kuberse update`
 
 ```
-kuberse update [--artifacts]
+kuberse update
 ```
 
-Syncs your registry fork with the upstream Kuberse registry, resolves any new template placeholders (values like `kuberse.net` that get substituted with your environment-specific configuration), and commits/pushes the result.
+Syncs your registry fork with the upstream Kuberse registry, resolves any new `${PLACEHOLDER}` tokens, and commits/pushes the result.
 
-| Flag | Description |
-|------|-------------|
-| `--artifacts` | Additionally mirror OCI artifacts from `ghcr.io` to your internal registry (Gitea environments only). **Note:** this flag is currently a stub and does not perform mirroring yet. |
+**Flow:**
+1. Fetches and merges from the `upstream` remote (always configured during initial clone)
+2. Resolves all known placeholders from config — idempotent on already-resolved files
+3. For Gitea: mirrors OCI artifacts and resolves version placeholders
+4. Prompts only for genuinely new placeholders not found in config
+5. Persists any new values to `kuberse-config` for future use
+6. Commits and pushes
 
 ---
 
@@ -191,6 +195,10 @@ Inside the kuberse-cli pod, configuration lives at `/etc/kuberse/`. The followin
 | `admin_password` | Platform admin password |
 | `org_name` | Organization name |
 | `github_token` | GitHub token (if using GitHub as upstream) |
+
+**Dynamic discovery:** The `PlaceholderManager` reads all files in `/etc/kuberse/` and maps `filename.upper()` → `${PLACEHOLDER}`. Adding a key to the `kuberse-config` Secret makes it automatically available — no code changes needed.
+
+**Persistence:** Custom placeholder values entered during plugin install are written back to the `kuberse-config` Secret via `kubectl patch`. They appear in `/etc/kuberse/` on subsequent runs.
 
 The registry repo is cloned at `/workspace/registry`. Plugin repos are cloned under `/workspace/plugins/<repo>`.
 

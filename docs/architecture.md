@@ -66,7 +66,7 @@ graph TB
 
 3. **Three-level app-of-apps** — `bootstrap.yaml` → category app-of-apps → individual Applications. ArgoCD auto-discovers new services by scanning directories.
 
-4. **Template-driven personalization** — All manifests use `${PLACEHOLDER}` tokens that the CLI resolves during setup. After resolution, the repo contains valid YAML that ArgoCD can apply directly.
+4. **Template-driven personalization** — All manifests use `${PLACEHOLDER}` tokens that the CLI resolves during setup. The CLI dynamically discovers all config values from a mounted Kubernetes Secret (`kuberse-config`), so adding new placeholders requires zero code changes — just add a key to the Secret. Custom values entered during plugin install are automatically persisted back to the Secret for future use.
 
 5. **Plugin extensibility** — New capabilities ship as OCI artifacts (chart + manifests). The CLI mirrors them to the user's registry and injects resolved manifests into this repo. ArgoCD does the rest.
 

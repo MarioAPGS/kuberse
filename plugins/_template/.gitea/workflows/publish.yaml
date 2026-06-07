@@ -11,7 +11,7 @@ on:
         default: false
 
 env:
-  REGISTRY_HOST: gitea-http.platform.svc.cluster.local:3000
+  REGISTRY_HOST: ${REGISTRY_URL}
   REGISTRY_USER: "${{ github.actor }}"
 
 jobs:

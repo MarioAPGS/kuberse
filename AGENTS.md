@@ -58,13 +58,22 @@ scripts/                # Utility scripts
 
 ## Placeholder Reference
 
+All values come from the `kuberse-config` K8s Secret, dynamically discovered by `PlaceholderManager.build_replacements()` (reads `/etc/kuberse/` directory, maps `filename.upper()` → value). No hardcoded mapping — new keys are auto-discovered.
+
 | Placeholder | Description |
 |-------------|-------------|
 | `${BASE_DOMAIN}` | Platform domain (e.g., `mycompany.dev`) |
 | `${ORG_NAME}` | GitHub/Gitea org name |
-| `${REGISTRY_URL}` | OCI registry host (e.g., `ghcr.io`) |
-| `${GIT_BASE_URL}` | Git server URL (e.g., `https://github.com`) |
+| `${REGISTRY_URL}` | OCI registry host (e.g., `ghcr.io` or `gitea-http.platform.svc.cluster.local:3000`) |
+| `${GIT_BASE_URL}` | Git server URL (internal, e.g., `https://github.com/my-org`) |
+| `${GIT_BASE_URL_EXTERNAL}` | Git server URL (external access) |
 | `${ADMIN_EMAIL}` | Platform admin email |
+| `${ADMIN_USERNAME}` | Derived from email (part before `@`) |
 | `${GIT_PROVIDER}` | `github` or `gitea` |
-| `${PLATFORM_VERSION}` | Platform chart version |
-| `${KUBERSE_<PLUGIN>_VERSION}` | Plugin chart versions |
+| `${CLUSTER_MODE}` | `minikube` or `k3s` |
+| `${PLATFORM_VERSION}` | Platform chart version (auto-resolved from OCI) |
+| `${KUBERSE_<PLUGIN>_VERSION}` | Plugin chart versions (hyphens → underscores) |
+
+**Important:** The composite form `oci://${REGISTRY_URL}/${ORG_NAME}/...` is the standard pattern for OCI `repoURL` fields. Never hardcode registry hosts or org names.
+
+**Version placeholder naming:** chart name uppercased + hyphens replaced with underscores + `_VERSION` suffix. E.g., `kuberse-networking` → `${KUBERSE_NETWORKING_VERSION}`.

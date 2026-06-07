@@ -47,7 +47,8 @@ metadata:
     argocd.argoproj.io/sync-wave: "1"
 spec:
   source:
-    repoURL: ${REGISTRY_URL}/${ORG_NAME}/charts/platform
+    repoURL: oci://${REGISTRY_URL}/${ORG_NAME}/kuberse/helm/platform
+    chart: platform
     targetRevision: ${PLATFORM_VERSION}
     helm:
       values: |
@@ -70,6 +71,8 @@ spec:
       - CreateNamespace=true
       - ServerSideApply=true
 ```
+
+> **Note:** After `kuberse setup` resolves placeholders, these `${...}` tokens become concrete values in your fork (e.g., `oci://ghcr.io/my-org/kuberse/helm/platform`). ArgoCD reads the resolved YAML — there is no runtime templating of placeholders.
 
 ### Explicit operational values
 

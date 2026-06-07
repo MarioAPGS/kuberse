@@ -13,7 +13,7 @@ metadata:
   name: admin
 spec:
   profile:
-    email: marioapgs@gmail.com
+    email: ${ADMIN_EMAIL}
   memberOf: [admins]
 ---
 apiVersion: backstage.io/v1alpha1

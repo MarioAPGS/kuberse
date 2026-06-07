@@ -76,35 +76,49 @@ kuberse-networking/
 │           ├── charts/         # Subcharts (the actual workloads)
 │           └── values.yaml
 ├── template/                   # OCI manifest artifact contents
-│   ├── plugin.yaml             # Plugin descriptor
-│   ├── argocd/
-│   │   ├── app-of-apps.yaml   # Category-level Application
-│   │   └── apps/
-│   │       └── *.yaml          # Per-service Applications
-│   ├── docs/                   # Plugin documentation (installed with plugin)
-│   │   └── README.md
-│   └── backstage/
-│       └── catalog-info.yaml   # Backstage entity (optional)
+│   ├── plugin.yaml             # Plugin descriptor (apiVersion: kuberse.io/v1)
+│   ├── argocd-app-of-apps.yaml # Plugin-level app-of-apps (required name)
+│   ├── cloudflare-tunnel/      # One directory per subchart/component
+│   │   ├── argocd-app.yaml     # ArgoCD Application for this component
+│   │   └── catalog-info.yaml   # Optional Backstage entity
+│   └── docs/                   # Plugin documentation (installed with plugin)
+│       └── README.md
 └── README.md
 ```
+
+> **Note:** This is the **colocated format** — each component has its own directory containing both `argocd-app.yaml` and optional `catalog-info.yaml`. The old split format (`argocd/` + `backstage/` subdirectories) is deprecated.
 
 ### plugin.yaml
 
 The plugin descriptor defines metadata and requirements:
 
 ```yaml
-name: kuberse-networking
-version: 0.2.5
-description: Cloudflare Tunnel networking for Kuberse
-chart:
+apiVersion: kuberse.io/v1
+kind: Plugin
+metadata:
   name: kuberse-networking
-  repository: oci://ghcr.io/kuberse/charts
-requires:
-  platform: ">=1.4.0"
-secrets:
-  - path: kuberse/cloudflare
-    keys: [tunnel-token]
+  version: 1.0.0
+  description: "Cloudflare Tunnel networking for Kuberse"
+  author: MarioAPGS
+spec:
+  manifests:
+    argocd: "."
+
+  artifacts:
+    images: []
+    charts:
+      - oci://ghcr.io/marioapgs/kuberse-networking-plugin/charts/kuberse-networking:latest
+
+  placeholders:
+    - REGISTRY_URL
+    - GIT_BASE_URL
+    - ORG_NAME
+    - BASE_DOMAIN
 ```
+
+The `spec.placeholders` list declares which tokens appear in the plugin's manifests:
+- **If the value exists in the platform config** → resolved automatically (no prompt)
+- **If the value is NOT in config** → user is prompted at install time, and the value is **persisted** to `kuberse-config` for future use
 
 ## How Plugins Integrate
 

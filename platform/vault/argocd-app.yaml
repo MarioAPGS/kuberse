@@ -11,7 +11,7 @@ spec:
   project: default
   source:
     chart: platform
-    repoURL: oci://gitea-http.platform.svc.cluster.local:3000/marioapgs/kuberse/helm/platform
+    repoURL: oci://${REGISTRY_URL}/${ORG_NAME}/kuberse/helm/platform
     targetRevision: latest
     helm:
       values: |
@@ -25,7 +25,7 @@ spec:
           ingress:
             enabled: true
             className: nginx
-            host: "vault.kuberse.net"
+             host: "vault.${BASE_DOMAIN}"
             tls:
               enabled: false
           moduleConfig:
