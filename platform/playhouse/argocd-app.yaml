@@ -27,7 +27,7 @@ spec:
         # Dev container with OpenCode agent + code-server
         dev:
           image:
-             repository: ${REGISTRY_URL}/${ORG_NAME}/kuberse/img/dev-kit
+            repository: ${REGISTRY_URL}/${ORG_NAME}/kuberse/img/dev-kit
             tag: latest
             pullPolicy: IfNotPresent
           env:
