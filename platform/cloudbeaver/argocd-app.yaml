@@ -37,7 +37,7 @@ spec:
           ingress:
             enabled: true
             className: nginx
-             host: "cloudbeaver.${BASE_DOMAIN}"
+            host: "cloudbeaver.${BASE_DOMAIN}"
             tls:
               enabled: false
           admin:

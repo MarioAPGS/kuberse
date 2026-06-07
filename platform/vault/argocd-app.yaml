@@ -25,7 +25,7 @@ spec:
           ingress:
             enabled: true
             className: nginx
-             host: "vault.${BASE_DOMAIN}"
+            host: "vault.${BASE_DOMAIN}"
             tls:
               enabled: false
           moduleConfig:

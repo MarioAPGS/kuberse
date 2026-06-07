@@ -20,13 +20,13 @@ spec:
           ingress:
             enabled: true
             className: nginx
-             host: "argocd.${BASE_DOMAIN}"
+            host: "argocd.${BASE_DOMAIN}"
             tls:
               enabled: false
           oidc:
             enabled: true
-             url: "https://argocd.${BASE_DOMAIN}"
-             issuer: "https://auth.${BASE_DOMAIN}/application/o/argocd/"
+            url: "https://argocd.${BASE_DOMAIN}"
+            issuer: "https://auth.${BASE_DOMAIN}/application/o/argocd/"
             name: "Authentik"
             scopes:
               - openid
@@ -50,10 +50,10 @@ spec:
             name: ArgoCD
             slug: argocd
             redirectUris:
-               - url: "https://argocd.${BASE_DOMAIN}/auth/callback"
+              - url: "https://argocd.${BASE_DOMAIN}/auth/callback"
                 matchingMode: strict
             application:
-               launchUrl: "https://argocd.${BASE_DOMAIN}"
+              launchUrl: "https://argocd.${BASE_DOMAIN}"
             vault:
               secretPath: "argocd/oidc"
   destination:

@@ -21,11 +21,11 @@ spec:
           ingress:
             enabled: true
             className: nginx
-             host: "kubrain.${BASE_DOMAIN}"
+            host: "kubrain.${BASE_DOMAIN}"
             tls:
               enabled: false
           image:
-             repository: ${REGISTRY_URL}/${ORG_NAME}/kuberse/img/kubrain
+            repository: ${REGISTRY_URL}/${ORG_NAME}/kuberse/img/kubrain
             tag: latest
             pullPolicy: Always
           vault:
@@ -59,14 +59,14 @@ spec:
                 url: env.PG_CONNECTION_STRING
                 synchronize: true
               ingestion:
-                 github:
-                   owner: ${ORG_NAME}
+                github:
+                  owner: ${ORG_NAME}
                   match: "**/kuberse-entity.yaml"
                   fetch: "*/5 * * * *"
                   token: k8s.platform.kuberse-config.github_token
-                 gitea:
-                   url: http://${REGISTRY_URL}
-                   organization: ${ORG_NAME}
+                gitea:
+                  url: http://${REGISTRY_URL}
+                  organization: ${ORG_NAME}
                   match: "**/kuberse-entity.yaml"
                   fetch: "*/5 * * * *"
                   token: k8s.platform.kuberse-config.gitea_token
@@ -78,7 +78,7 @@ spec:
               vault:
                 url: env.VAULT_URL
               buildapp:
-                 chartRepo: oci://${REGISTRY_URL}/${ORG_NAME}/kuberse/helm/buildapp
+                chartRepo: oci://${REGISTRY_URL}/${ORG_NAME}/kuberse/helm/buildapp
                 chartVersion: latest
           resources:
             limits:
