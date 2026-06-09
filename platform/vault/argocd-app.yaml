@@ -42,7 +42,7 @@ spec:
                   cpu: 500m
               ha:
                 enabled: true
-                replicas: 3
+                replicas: 1
               dataStorage:
                 enabled: true
                 size: 10Gi

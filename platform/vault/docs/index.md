@@ -12,16 +12,14 @@
 
 ## Overview
 
-The Vault module deploys a **3-replica HashiCorp Vault cluster** with Raft storage for high availability, along with the **Vault Secrets Operator (VSO)** that automatically synchronizes Vault secrets into Kubernetes Secrets. It includes custom automation that initializes, unseals, and configures Vault without manual intervention.
+The Vault module deploys a **single-node HashiCorp Vault** with Raft storage pre-configured for HA (scale to 3 replicas to enable full HA), along with the **Vault Secrets Operator (VSO)** that automatically synchronizes Vault secrets into Kubernetes Secrets. It includes custom automation that initializes, unseals, and configures Vault without manual intervention.
 
 ## Architecture
 
 ```mermaid
 graph TB
-    subgraph "Vault Cluster (3 replicas)"
-        V0["vault-0 (leader)"]
-        V1["vault-1 (standby)"]
-        V2["vault-2 (standby)"]
+    subgraph "Vault (single-node, Raft-ready for HA)"
+        V0["vault-0 (active)"]
     end
 
     subgraph "Automation"
@@ -39,10 +37,8 @@ graph TB
     end
 
     INIT -->|"1. init + unseal"| V0
-    INIT -->|"2. unseal"| V1
-    INIT -->|"3. unseal"| V2
-    INIT -->|"4. enable KV v2 + K8s auth"| V0
-    INIT -->|"5. store keys"| SEC["Secret vault-init-keys"]
+    INIT -->|"2. enable KV v2 + K8s auth"| V0
+    INIT -->|"3. store keys"| SEC["Secret vault-init-keys"]
 
     CRON -->|"discovers ConfigMaps<br/>label vault=setup-creds"| K8S["Kubernetes API"]
     CRON -->|"creates policies and roles"| V0
@@ -50,16 +46,13 @@ graph TB
     VSO -->|uses| VC
     VSO -->|authenticates via| VA
     VSO -->|reads secrets from| V0
-
-    V0 <-->|"Raft replication"| V1
-    V0 <-->|"Raft replication"| V2
 ```
 
 ## Resources Created
 
 | Resource | Name | Description |
 |----------|------|-------------|
-| StatefulSet | `vault` (3 replicas) | Vault server pods with Raft storage (10Gi per replica) |
+| StatefulSet | `vault` (1 replica, scalable to 3 for HA) | Vault server pod with Raft storage (10Gi) |
 | Deployment | `vault-secrets-operator` | VSO controller that syncs secrets to K8s |
 | ConfigMap | `vault-init-script` | Bash script for init + unseal automation |
 | Job | `vault-init-job` | Runs the init script after Vault pods are ready |
@@ -76,7 +69,7 @@ Key settings from `values.yaml`:
 
 | Setting | Value | Description |
 |---------|-------|-------------|
-| `vault.server.ha.replicas` | `3` | Number of Vault pods |
+| `vault.server.ha.replicas` | `1` | Number of Vault pods (set to 3 for full HA) |
 | `vault.server.ha.raft.enabled` | `true` | Raft consensus storage |
 | `vault.server.dataStorage.size` | `10Gi` | Persistent volume per replica |
 | `vault.server.image.tag` | `1.19.0` | Vault server version |
@@ -90,7 +83,7 @@ Key settings from `values.yaml`:
 The Init Job runs a bash script that performs the following steps:
 
 1. **Wait for StatefulSet**: Polls until the `vault` StatefulSet reaches the desired replica count
-2. **Wait for Pods**: Ensures all 3 Vault pods are in `Running` state
+2. **Wait for Pods**: Ensures all Vault pods are in `Running` state
 3. **Check init status**: Queries the `/sys/health` endpoint via `kubectl exec`
 4. **Initialize** (if needed): Runs `vault operator init` with 5 key shares and a threshold of 3
 5. **Store keys**: Creates the `vault-init-keys` Kubernetes Secret with all 5 unseal keys and the root token
@@ -120,7 +113,7 @@ Vault seals itself when pods restart. The Init Job script handles both initial i
 - If Vault is already initialized (keys exist in `vault-init-keys` Secret), the script skips initialization and only performs unsealing
 - ArgoCD keeps the Init Job synced, so if pods restart, ArgoCD re-runs the Job to unseal
 
-**If all 3 pods restart simultaneously** (e.g., node drain), Vault will be sealed until ArgoCD re-syncs the Init Job or you manually unseal. In practice, ArgoCD's self-heal triggers this within seconds.
+**If the pod restarts** (e.g., node drain), Vault will be sealed until ArgoCD re-syncs the Init Job or you manually unseal. In practice, ArgoCD's self-heal triggers this within seconds.
 
 ## Eventual Consistency
 
