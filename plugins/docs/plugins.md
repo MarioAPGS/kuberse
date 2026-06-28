@@ -33,11 +33,11 @@ A plugin publishes exactly three kinds of artifact:
 
 All tools are pre-installed in the `kuberse-cli` pod. If running off-cluster:
 
-- `oras` -- OCI artifact operations
-- `helm` -- chart pull/push
+- `oras` -- OCI artifact operations (mirroring, login, download)
+- `helm` -- chart linting/templating
 - `git` -- registry repo management
-- `crane` -- image mirroring (preferred) or `docker` (fallback)
 - `kubectl` -- cluster access
+- `docker` -- optional, host-only fallback (the CLI pod mirrors everything with `oras`)
 
 ---
 
@@ -360,14 +360,13 @@ When you run `kuberse plugin install oci://ghcr.io/<owner>/my-plugin-plugin:1.0.
 3. **Download** -- `oras pull` fetches the OCI manifest artifact into a temp directory.
 4. **Validate** -- checks `plugin.yaml` against the `kuberse.io/v1` schema.
 5. **Idempotency check** -- if already installed, prompts for reinstall/upgrade/downgrade.
-6. **Mirror images** -- copies each image from source to destination registry using `crane copy`.
-7. **Mirror charts** -- `helm pull` + `helm push` to the user's registry, then tags as `:latest`. Also computes the version placeholder (e.g. `MY_PLUGIN_VERSION=0.1.0`).
-8. **Copy manifests** -- copies the manifest files into `plugins/<name>/` in the registry repo.
-9. **Resolve placeholders** -- substitutes `gitea-http.platform.svc.cluster.local:3000`, `marioapgs`, `kuberse.net`, `${MY_PLUGIN_VERSION}`, etc. with actual values from platform config + the chart version computed in step 7.
-10. **Write install record** -- saves metadata to `plugins/<name>/install-record.json`.
-11. **Commit and push** -- commits to the registry repo with `feat: install plugin <name> v<ver>`.
-12. **Seed secrets** -- scans for `secrets-expected.json` and populates Vault.
-13. **ArgoCD reconciles** -- discovers the new manifests and deploys everything.
+6. **Mirror artifacts** -- copies every chart and image from source to destination registry with a single `oras copy` each (`OciManager.mirror_artifact`). There is no chart-vs-image distinction: `oras copy` replicates the artifact with its layers, so no `crane`, `docker`, or `helm pull/push` is involved. Charts are copied to **their concrete version tag plus `:latest`** in one command (`oras copy <src> <dst>:<version>,latest`) because ArgoCD references the chart by `targetRevision: <version>`; the resolved version also feeds the version placeholder (e.g. `MY_PLUGIN_VERSION=0.1.0`). Images are copied to `<registry>/<org>/<image-name>` (last path segment) plus `:latest`.
+7. **Copy manifests** -- copies the manifest files into `plugins/<name>/` in the registry repo.
+8. **Resolve placeholders** -- substitutes `gitea-http.platform.svc.cluster.local:3000`, `marioapgs`, `kuberse.net`, `${MY_PLUGIN_VERSION}`, etc. with actual values from platform config + the chart version computed in step 6.
+9. **Write install record** -- saves metadata to `plugins/<name>/install-record.json`.
+10. **Commit and push** -- commits to the registry repo with `feat: install plugin <name> v<ver>`.
+11. **Seed secrets** -- scans for `secrets-expected.json` and populates Vault.
+12. **ArgoCD reconciles** -- discovers the new manifests and deploys everything.
 
 On failure, the registry repo is reset (`git checkout -- . && git clean -fd`). Mirrored OCI artifacts are not rolled back.
 
@@ -434,7 +433,7 @@ Two-stage cleanup:
 kuberse plugin registry-login ghcr.io
 ```
 
-Logs in across all available OCI tools (`oras`, `docker`, `helm`, `crane`).
+Logs in across all available OCI tools (`oras`, `helm`, and `docker` when present).
 
 ### Validating a plugin locally
 
@@ -598,7 +597,7 @@ What the shared workflow does:
 
 **Symptom:** ArgoCD shows `ComparisonError` after install.
 
-**Cause:** the user's registry has the chart with a version tag but no `:latest` alias.
+**Cause:** the user's registry has the chart with a version tag but no `:latest` alias. This is now rare: the CLI copies the version tag **and** `:latest` together in one `oras copy` during the mirror step, so a missing alias usually means the chart was pushed by some path other than `kuberse plugin install`.
 
 **Fix:** manually tag from inside the cluster:
 
@@ -704,7 +703,7 @@ The plugin system is built on four managers in `cli/kuberse_cli/managers/`:
 | Manager | Responsibility |
 |---------|----------------|
 | `GitManager` | URL normalization, clone, commit/push, fetch/merge |
-| `OciManager` | Registry login (oras/docker/helm/crane), artifact download, image/chart mirroring, `:latest` tagging |
+| `OciManager` | Registry login (`oras`/`helm`/`docker`), artifact download, unified artifact mirroring via a single `oras copy` (`mirror_artifact`), version resolution, `:latest` aliasing |
 | `RegistryManager` | Install records, manifest copying, plugin directory management |
 | `PlaceholderManager` | Token substitution (`${...}` -> actual values), unresolved placeholder detection |
 

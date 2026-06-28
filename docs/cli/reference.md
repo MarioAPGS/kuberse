@@ -146,7 +146,7 @@ Removes a plugin in two stages:
 kuberse plugin registry-login REGISTRY [OPTIONS]
 ```
 
-Authenticates to an OCI registry. Credentials are applied to all available tools (`oras`, `docker`, `helm`, `crane`).
+Authenticates to an OCI registry. Credentials are applied to all available tools (`oras`, `helm`, `docker`).
 
 | Flag | Description |
 |------|-------------|
@@ -221,4 +221,4 @@ The registry repo is cloned at `/workspace/registry`. Plugin repos are cloned un
 | `git` | Yes | Repository operations |
 | `kubectl` | Yes | Cluster interaction |
 | `vault` | Yes | Secrets management |
-| `crane` | No | Image mirroring (used by `update --artifacts`) |
+| `docker` | No | Host-only fallback. The pod mirrors all OCI artifacts with `oras copy`, so `crane`/`docker` are not used in-cluster. |
