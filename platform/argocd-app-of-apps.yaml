@@ -10,7 +10,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: ${GIT_BASE_URL}/kuberse
+    repoURL: http://gitea-http.platform.svc.cluster.local:3000/marioapgs/kuberse
     targetRevision: main
     path: platform
     directory:

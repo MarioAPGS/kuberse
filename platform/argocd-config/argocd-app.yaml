@@ -11,7 +11,7 @@ spec:
   project: default
   source:
     chart: platform
-    repoURL: oci://${REGISTRY_URL}/${ORG_NAME}/kuberse/helm/platform
+    repoURL: oci://gitea-http.platform.svc.cluster.local:3000/marioapgs/kuberse/helm/platform
     targetRevision: latest
     helm:
       values: |
@@ -20,13 +20,13 @@ spec:
           ingress:
             enabled: true
             className: nginx
-            host: "argocd.${BASE_DOMAIN}"
+            host: "argocd.kuberse.net"
             tls:
               enabled: false
           oidc:
             enabled: true
-            url: "https://argocd.${BASE_DOMAIN}"
-            issuer: "https://auth.${BASE_DOMAIN}/application/o/argocd/"
+            url: "https://argocd.kuberse.net"
+            issuer: "https://auth.kuberse.net/application/o/argocd/"
             name: "Authentik"
             scopes:
               - openid
@@ -50,10 +50,10 @@ spec:
             name: ArgoCD
             slug: argocd
             redirectUris:
-              - url: "https://argocd.${BASE_DOMAIN}/auth/callback"
+              - url: "https://argocd.kuberse.net/auth/callback"
                 matchingMode: strict
             application:
-              launchUrl: "https://argocd.${BASE_DOMAIN}"
+              launchUrl: "https://argocd.kuberse.net"
             vault:
               secretPath: "argocd/oidc"
   destination:

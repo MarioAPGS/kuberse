@@ -11,7 +11,7 @@ spec:
   project: default
   source:
     chart: buildapp
-    repoURL: oci://${REGISTRY_URL}/${ORG_NAME}/kuberse/helm/buildapp
+    repoURL: oci://gitea-http.platform.svc.cluster.local:3000/marioapgs/kuberse/helm/buildapp
     targetRevision: latest
     helm:
       values: |
@@ -27,7 +27,7 @@ spec:
         # Dev container with OpenCode agent + code-server
         dev:
           image:
-            repository: ${REGISTRY_URL}/${ORG_NAME}/kuberse/img/dev-kit
+            repository: gitea-http.platform.svc.cluster.local:3000/marioapgs/kuberse/img/dev-kit
             tag: latest
             pullPolicy: IfNotPresent
           env:

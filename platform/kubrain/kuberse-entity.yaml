@@ -13,7 +13,7 @@ metadata:
     kubernetes-label-selector: app.kubernetes.io/name=kubrain
     argocd-app: kubrain
   links:
-    - url: https://kubrain.${BASE_DOMAIN}
+    - url: https://kubrain.kuberse.net
       title: Kubrain UI
       icon: dashboard
 spec:

@@ -18,7 +18,7 @@ metadata:
     kubernetes-label-selector: app.kubernetes.io/part-of=argocd
     argocd-app: argocd-config
   links:
-    - url: https://argocd.${BASE_DOMAIN}
+    - url: https://argocd.kuberse.net
       title: ArgoCD UI
       icon: dashboard
     - url: https://argo-cd.readthedocs.io/en/stable/
