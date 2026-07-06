@@ -11,7 +11,7 @@ spec:
   project: default
   source:
     chart: platform
-    repoURL: oci://${REGISTRY_URL}/${ORG_NAME}/kuberse/helm/platform
+    repoURL: oci://gitea-http.platform.svc.cluster.local:3000/marioapgs/kuberse/helm/platform
     targetRevision: latest
     helm:
       values: |
@@ -42,7 +42,7 @@ spec:
           ingress:
             enabled: true
             className: nginx
-            host: "auth.${BASE_DOMAIN}"
+            host: "auth.kuberse.net"
             tls:
               enabled: false
           postgresql:
@@ -53,7 +53,7 @@ spec:
           oidcProvisioner:
             enabled: true
             image: python:3-alpine
-            discoveryLabel: "${BASE_DOMAIN}/authentik-oidc"
+            discoveryLabel: "kuberse.net/authentik-oidc"
           dnsHairpin:
             enabled: true
             ingressService:
