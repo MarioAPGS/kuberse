@@ -1,0 +1,29 @@
+##
+## Kubrain entity catalog for: ai-infra/copilot-wrapper
+## Translated from Backstage catalog-info.yaml to Kubrain format
+##
+
+---
+kind: Component
+metadata:
+  name: copilot-wrapper
+  namespace: ai-infra
+  description: >
+    OpenAI-compatible API wrapper over the GitHub Copilot CLI. Bridges
+    LangGraph/LiteLLM clients to Copilot models.
+  annotations:
+    kubernetes-id: copilot-wrapper
+    kubernetes-namespace: ai-infra
+    kubernetes-label-selector: app.kubernetes.io/name=copilot-wrapper
+  links:
+    - url: http://gitea-http.platform.svc.cluster.local:3000/marioapgs/kuberse-ai/tree/main/src/copilot-wrapper
+      title: Source
+      icon: github
+    - url: http://gitea-http.platform.svc.cluster.local:3000/marioapgs/kuberse-ai/tree/main/src/kuberse-ai/chart/charts/copilot-wrapper
+      title: Helm Chart
+      icon: github
+spec:
+  type: service
+  lifecycle: production
+  owner: group:default/admins
+  system: kuberse-ai
