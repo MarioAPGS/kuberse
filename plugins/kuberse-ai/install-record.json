@@ -1,0 +1,7 @@
+{
+  "name": "kuberse-ai",
+  "version": "0.40.2",
+  "installed_at": "2026-07-14T16:19:32.729207+00:00",
+  "mode": "mirror",
+  "source": "oci://ghcr.io/marioapgs/kuberse-ai-plugin:latest"
+}

@@ -1,0 +1,47 @@
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: kuberse-ai
+  namespace: ai-infra
+  title: Kuberse AI
+  description: >
+    AI infrastructure for Kuberse — LLM Router (LiteLLM), Copilot Wrapper,
+    LangGraph multi-agent orchestration, plus shared PostgreSQL and Redis.
+  annotations:
+    backstage.io/kubernetes-namespace: ai-infra
+spec:
+  type: ai
+  owner: group:default/admins
+  domain: default/kuberse
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: postgres-ai
+  namespace: ai-infra
+  description: >
+    Shared PostgreSQL for AI infrastructure — multi-database instance with
+    per-service credentials provisioned via CronJob.
+  annotations:
+    backstage.io/techdocs-ref: url:http://gitea-http.platform.svc.cluster.local:3000/marioapgs/kuberse-ai/tree/main/src/kuberse-ai/chart/charts/postgres-ai
+    backstage.io/kubernetes-id: postgres-ai
+    backstage.io/kubernetes-namespace: ai-infra
+    backstage.io/kubernetes-label-selector: app.kubernetes.io/name=postgres-ai
+  links:
+    - url: http://gitea-http.platform.svc.cluster.local:3000/marioapgs/kuberse-ai/tree/main/src/kuberse-ai/chart/charts/postgres-ai
+      title: Helm Chart
+      icon: github
+spec:
+  type: database
+  lifecycle: production
+  owner: group:default/admins
+  system: kuberse-ai
+---
+apiVersion: backstage.io/v1alpha1
+kind: Location
+metadata:
+  name: kuberse-ai
+  description: Kuberse AI — LLM Router, Copilot Wrapper, Kuberse Agents, Postgres, Redis
+spec:
+  targets:
+    - ./*/catalog-info.yaml

@@ -1,0 +1,2 @@
+# This directory contains documentation, not an ArgoCD sub-application.
+# The .noapp marker tells the canonical-layout validator to skip this directory.

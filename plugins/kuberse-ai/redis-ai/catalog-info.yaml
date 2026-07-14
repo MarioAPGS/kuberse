@@ -1,0 +1,22 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: redis-ai
+  namespace: ai-infra
+  description: >
+    Redis for AI infrastructure — quota tracking, semantic cache, and
+    LangGraph checkpointer state.
+  annotations:
+    backstage.io/techdocs-ref: url:http://gitea-http.platform.svc.cluster.local:3000/marioapgs/kuberse-ai/tree/main/src/kuberse-ai/chart/charts/redis-ai
+    backstage.io/kubernetes-id: redis-ai
+    backstage.io/kubernetes-namespace: ai-infra
+    backstage.io/kubernetes-label-selector: app.kubernetes.io/name=redis-ai
+  links:
+    - url: http://gitea-http.platform.svc.cluster.local:3000/marioapgs/kuberse-ai/tree/main/src/kuberse-ai/chart/charts/redis-ai
+      title: Helm Chart
+      icon: github
+spec:
+  type: database
+  lifecycle: production
+  owner: group:default/admins
+  system: kuberse-ai

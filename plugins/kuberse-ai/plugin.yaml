@@ -1,0 +1,23 @@
+apiVersion: kuberse.io/v1
+kind: Plugin
+metadata:
+  name: kuberse-ai
+  version: 0.40.2
+  description: "AI infrastructure plugin for Kuberse: LLM Router, Copilot Wrapper, Kuberse Agents, Redis, and PostgreSQL"
+  author: MarioAPGS
+spec:
+  manifests:
+    argocd: "."
+
+  artifacts:
+    images:
+      - ghcr.io/marioapgs/kuberse/kuberse-agents:latest
+      - ghcr.io/marioapgs/kuberse/copilot-wrapper:latest
+    charts:
+      - oci://ghcr.io/marioapgs/kuberse-ai-plugin/charts/kuberse-ai:latest
+
+  placeholders:
+    - REGISTRY_URL
+    - GIT_BASE_URL
+    - ORG_NAME
+    - BASE_DOMAIN

@@ -1,0 +1,31 @@
+##
+## Kubrain entity catalog for: ai-infra/llm-router
+## Translated from Backstage catalog-info.yaml to Kubrain format
+##
+
+---
+kind: Component
+metadata:
+  name: llm-router
+  namespace: ai-infra
+  description: >
+    LiteLLM Proxy — OpenAI-compatible gateway with free-tier rotation and
+    quota tracking. Single entry point for all LLM traffic.
+  annotations:
+    kubernetes-id: llm-router
+    kubernetes-namespace: ai-infra
+    kubernetes-label-selector: app.kubernetes.io/name=llm-router
+  links:
+    - url: http://gitea-http.platform.svc.cluster.local:3000/marioapgs/kuberse-ai/tree/main/src/kuberse-ai/chart/charts/llm-router
+      title: Helm Chart
+      icon: github
+    - url: https://docs.litellm.ai/
+      title: LiteLLM Docs
+      icon: docs
+spec:
+  type: service
+  lifecycle: production
+  owner: group:default/admins
+  system: kuberse-ai
+  dependsOn:
+    - component:ai-infra/redis-ai

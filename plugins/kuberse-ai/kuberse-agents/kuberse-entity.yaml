@@ -1,0 +1,48 @@
+##
+## Kubrain entity catalog for: ai-infra/kuberse-agents
+## Translated from Backstage catalog-info.yaml to Kubrain format
+##
+
+---
+kind: Component
+metadata:
+  name: kuberse-agents
+  namespace: ai-infra
+  description: >
+    LangGraph-based multi-agent orchestration API. Uses MCP tools and shared
+    LiteLLM router; persists state in PostgreSQL and Redis.
+  annotations:
+    kubernetes-id: kuberse-agents
+    kubernetes-namespace: ai-infra
+    kubernetes-label-selector: app.kubernetes.io/name=kuberse-agents
+  links:
+    - url: http://gitea-http.platform.svc.cluster.local:3000/marioapgs/kuberse-ai/tree/main/src/kuberse-agents
+      title: Source
+      icon: github
+    - url: http://gitea-http.platform.svc.cluster.local:3000/marioapgs/kuberse-ai/tree/main/src/kuberse-ai/chart/charts/kuberse-agents
+      title: Helm Chart
+      icon: github
+    - url: /api/v1/kuberse-agents/docs
+      title: Agents API Docs
+      icon: docs
+spec:
+  type: service
+  lifecycle: production
+  owner: group:default/admins
+  system: kuberse-ai
+  dependsOn:
+    - component:ai-infra/llm-router
+    - component:ai-infra/redis-ai
+  api:
+    - name: kuberse-agents
+      host: http://kuberse-agents.ai-infra.svc.cluster.local:8080
+      docs: /docs
+      openApi: /openapi.json
+  agents:
+    - name: kuberse-agents
+      displayName: Kuberse Agents
+      description: >
+        AI-powered BuildApp orchestration agent. Handles environment
+        provisioning, code tasks, and multi-step development workflows.
+      host: http://kuberse-agents.ai-infra.svc.cluster.local:8080
+      icon: null

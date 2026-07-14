@@ -1,0 +1,28 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: kuberse-agents
+  namespace: ai-infra
+  description: >
+    LangGraph-based multi-agent orchestration API. Uses MCP tools and shared
+    LiteLLM router; persists state in PostgreSQL and Redis.
+  annotations:
+    backstage.io/techdocs-ref: url:http://gitea-http.platform.svc.cluster.local:3000/marioapgs/kuberse-ai/tree/main/src/kuberse-agents
+    backstage.io/kubernetes-id: kuberse-agents
+    backstage.io/kubernetes-namespace: ai-infra
+    backstage.io/kubernetes-label-selector: app.kubernetes.io/name=kuberse-agents
+  links:
+    - url: http://gitea-http.platform.svc.cluster.local:3000/marioapgs/kuberse-ai/tree/main/src/kuberse-agents
+      title: Source
+      icon: github
+    - url: http://gitea-http.platform.svc.cluster.local:3000/marioapgs/kuberse-ai/tree/main/src/kuberse-ai/chart/charts/kuberse-agents
+      title: Helm Chart
+      icon: github
+spec:
+  type: service
+  lifecycle: production
+  owner: group:default/admins
+  system: kuberse-ai
+  dependsOn:
+    - component:ai-infra/llm-router
+    - component:ai-infra/redis-ai

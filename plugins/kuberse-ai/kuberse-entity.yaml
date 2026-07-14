@@ -1,0 +1,52 @@
+##
+## Kubrain entity catalog for: ai-infra/kuberse-ai
+## Translated from Backstage catalog-info.yaml to Kubrain format
+##
+
+---
+kind: System
+metadata:
+  name: kuberse-ai
+  namespace: ai-infra
+  title: Kuberse AI
+  description: >
+    AI infrastructure for Kuberse — LLM Router (LiteLLM), Copilot Wrapper,
+    LangGraph multi-agent orchestration, plus shared PostgreSQL and Redis.
+  annotations:
+    kubernetes-namespace: ai-infra
+spec:
+  type: ai
+  owner: group:default/admins
+  domain: default/kuberse
+
+---
+kind: Component
+metadata:
+  name: postgres-ai
+  namespace: ai-infra
+  description: >
+    Shared PostgreSQL for AI infrastructure — multi-database instance with
+    per-service credentials provisioned via CronJob.
+  annotations:
+    kubernetes-id: postgres-ai
+    kubernetes-namespace: ai-infra
+    kubernetes-label-selector: app.kubernetes.io/name=postgres-ai
+  links:
+    - url: http://gitea-http.platform.svc.cluster.local:3000/marioapgs/kuberse-ai/tree/main/src/kuberse-ai/chart/charts/postgres-ai
+      title: Helm Chart
+      icon: github
+spec:
+  type: database
+  lifecycle: production
+  owner: group:default/admins
+  system: kuberse-ai
+
+---
+kind: Location
+metadata:
+  name: kuberse-ai
+  namespace: default
+  description: Kuberse AI — LLM Router, Copilot Wrapper, Kuberse Agents, Postgres, Redis
+spec:
+  targets:
+    - ./*/kuberse-entity.yaml
