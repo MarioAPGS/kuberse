@@ -1,0 +1,73 @@
+##
+## Kubrain entity catalog for: networking/cloudflare
+## Translated from Backstage catalog-info.yaml to Kubrain format
+##
+
+---
+kind: System
+metadata:
+  name: cloudflare
+  namespace: networking
+  title: Cloudflare
+  description: >
+    Network ingress and external access — NGINX Ingress Controller for
+    internal routing, Cloudflare Tunnel for secure outbound-only external access.
+  annotations:
+    kubernetes-namespace: networking
+  links:
+    - url: https://dash.cloudflare.com/
+      title: Cloudflare Dashboard
+      icon: dashboard
+spec:
+  type: networking
+  owner: group:default/admins
+  domain: default/kuberse
+
+---
+kind: Component
+metadata:
+  name: ingress-nginx
+  namespace: platform
+  description: >
+    NGINX Ingress Controller — default IngressClass, NodePort
+    (HTTP: 30080, HTTPS: 30443), receives traffic from Cloudflare Tunnel.
+  annotations:
+    kubernetes-id: ingress-nginx
+    kubernetes-namespace: platform
+    kubernetes-label-selector: app.kubernetes.io/name=ingress-nginx
+  links:
+    - url: https://kubernetes.github.io/ingress-nginx/
+      title: Ingress NGINX Docs
+      icon: docs
+spec:
+  type: service
+  lifecycle: production
+  owner: group:default/admins
+  system: cloudflare
+
+---
+kind: Component
+metadata:
+  name: cloudflare-tunnel
+  namespace: networking
+  description: >
+    Cloudflare Tunnel — secure outbound-only external access, 2 replicas HA.
+    Routes *.kuberse.net hostnames through NGINX Ingress.
+  annotations:
+    kubernetes-id: cloudflare-tunnel
+    kubernetes-namespace: networking
+    kubernetes-label-selector: app.kubernetes.io/name=cloudflare-tunnel
+  links:
+    - url: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/
+      title: Cloudflare Tunnel Docs
+      icon: docs
+    - url: https://one.dash.cloudflare.com/
+      title: Cloudflare Zero Trust Dashboard
+      icon: dashboard
+spec:
+  type: service
+  lifecycle: production
+  owner: group:default/admins
+  system: cloudflare
+  dependsOn:
+    - component:platform/ingress-nginx

@@ -1,0 +1,13 @@
+##
+## Kubrain entity discovery for: kuberse-networking
+##
+
+---
+kind: Location
+metadata:
+  name: kuberse-networking
+  namespace: default
+  description: Kuberse networking — Cloudflare Tunnel and ingress routing
+spec:
+  targets:
+    - ./*/kuberse-entity.yaml

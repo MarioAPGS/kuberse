@@ -1,0 +1,8 @@
+apiVersion: backstage.io/v1alpha1
+kind: Location
+metadata:
+  name: kuberse-networking
+  description: Kuberse networking — Cloudflare Tunnel and ingress routing
+spec:
+  targets:
+    - ./*/catalog-info.yaml

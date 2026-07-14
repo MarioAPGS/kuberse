@@ -1,0 +1,7 @@
+{
+  "name": "kuberse-networking",
+  "version": "1.8.5",
+  "installed_at": "2026-07-14T17:04:09.002395+00:00",
+  "mode": "mirror",
+  "source": "oci://ghcr.io/marioapgs/kuberse-networking-plugin:latest"
+}

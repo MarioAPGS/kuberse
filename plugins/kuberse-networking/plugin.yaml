@@ -1,0 +1,21 @@
+apiVersion: kuberse.io/v1
+kind: Plugin
+metadata:
+  name: kuberse-networking
+  version: 1.8.5
+  description: "Networking plugin for Kuberse: Cloudflare Tunnel with Vault-managed secrets and wildcard ingress routing"
+  author: MarioAPGS
+spec:
+  manifests:
+    argocd: "."
+
+  artifacts:
+    images: []
+    charts:
+      - oci://ghcr.io/marioapgs/kuberse-networking-plugin/charts/kuberse-networking:latest
+
+  placeholders:
+    - REGISTRY_URL
+    - GIT_BASE_URL
+    - ORG_NAME
+    - BASE_DOMAIN
