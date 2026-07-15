@@ -72,3 +72,20 @@ kubectl -n platform exec vault-0 -- wget -qO- --no-check-certificate \
 ### `kuberse update --artifacts` does nothing
 
 - **Note**: This flag is currently a stub for Gitea installations. After syncing with upstream, you may need to manually mirror new chart versions.
+
+### Browser shows `ERR_CERT_AUTHORITY_INVALID` on `https://*.<domain>:30443`
+
+- **Cause**: Accessed over the internal DNS, ingress-nginx serves its self-signed
+  *"Kubernetes Ingress Controller Fake Certificate"*, which the browser does not trust.
+- **Fix**: Serve a browser-trusted certificate as the ingress default:
+  1. On the operator machine, run `kuberse local-ssl setup`. This installs a local
+     CA (mkcert) into your OS/browser trust stores, generates a wildcard cert for
+     `*.<domain>`, and creates the `platform/kuberse-local-tls` TLS Secret.
+  2. Enable the opt-in flag in `platform/ingress-nginx/argocd-app.yaml` — under the
+     inline Helm `values`, uncomment `default-ssl-certificate: platform/kuberse-local-tls`
+     inside `controller.extraArgs`. Commit and push; ArgoCD applies it on the next sync.
+- **Important**: Only enable the flag **after** the `kuberse-local-tls` Secret exists.
+  Referencing a missing Secret prevents the ingress controller from starting.
+- **Browser note**: Restart the browser (fully quit, not just the window) so it
+  reloads the trust store. Brave/Chrome/Firefox on Linux read the mkcert CA from
+  `~/.pki/nssdb` (requires `libnss3-tools`/`nss-tools`, installed by `local-ssl setup`).
