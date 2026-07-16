@@ -133,7 +133,7 @@ spec:
 | `spec.manifests.argocd` | Path (relative to artifact root) where ArgoCD manifests live. Use `"."` |
 | `spec.artifacts.images` | Full image references the CLI must mirror (e.g. `ghcr.io/org/my-image:1.0.0`) |
 | `spec.artifacts.charts` | OCI chart references. CI rewrites `:latest` to the concrete version at publish time |
-| `spec.placeholders` | Tokens like `gitea-http.platform.svc.cluster.local:3000` that the CLI substitutes with values from platform config |
+| `spec.placeholders` | Tokens like `${REGISTRY_URL}` that the CLI substitutes with values from platform config |
 
 **About the version placeholder:** You do NOT need to list the version placeholder (e.g. `MY_PLUGIN_VERSION`) in `spec.placeholders`. The CLI auto-generates it during chart mirroring by converting the chart name to `SCREAMING_SNAKE_CASE` + `_VERSION` (e.g. `my-plugin` becomes `${MY_PLUGIN_VERSION}`, `kuberse-observability` becomes `${KUBERSE_OBSERVABILITY_VERSION}`). Use this pattern in your ArgoCD Applications' `targetRevision` field.
 
@@ -194,7 +194,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: http://gitea-http.platform.svc.cluster.local:3000/marioapgs/kuberse    # "kuberse" is the registry repo name (fixed convention)
+    repoURL: ${GIT_BASE_URL}/kuberse    # "kuberse" is the registry repo name (fixed convention)
     targetRevision: main
     path: plugins/my-plugin
     directory:
@@ -216,7 +216,7 @@ spec:
 **Rules:**
 - File **must** be named `argocd-app-of-apps.yaml`.
 - `syncOptions` **must** include `ServerSideApply=true`.
-- `repoURL` uses `http://gitea-http.platform.svc.cluster.local:3000/marioapgs/kuberse` -- the registry repo is always named `kuberse` by convention.
+- `repoURL` uses `${GIT_BASE_URL}/kuberse` -- the registry repo is always named `kuberse` by convention.
 
 #### Per-component Application (`<subchart>/argocd-app.yaml`)
 
@@ -236,7 +236,7 @@ spec:
   project: default
   source:
     chart: my-plugin
-    repoURL: oci://gitea-http.platform.svc.cluster.local:3000/marioapgs/charts/my-plugin
+    repoURL: oci://${REGISTRY_URL}/${ORG_NAME}/charts/my-plugin
     targetRevision: ${MY_PLUGIN_VERSION}
     helm:
       values: |
@@ -257,7 +257,7 @@ spec:
 **Rules:**
 - `metadata.name` must match the directory name.
 - The `values` block enables **only** the matching subchart by name.
-- `repoURL` points to the umbrella chart: `oci://gitea-http.platform.svc.cluster.local:3000/marioapgs/charts/<plugin-name>`. All Applications point at the **same chart** -- only the enabled subchart differs.
+- `repoURL` points to the umbrella chart: `oci://${REGISTRY_URL}/${ORG_NAME}/charts/<plugin-name>`. All Applications point at the **same chart** -- only the enabled subchart differs.
 - `targetRevision` uses the auto-generated version placeholder (see "About the version placeholder" above).
 
 **OCI path explanation:**
@@ -265,9 +265,9 @@ spec:
 | Context | Path | Example |
 |---------|------|---------|
 | Source (GHCR, published by CI) | `ghcr.io/<owner>/<plugin>-plugin/charts/<chart-name>` | `ghcr.io/marioapgs/kuberse-observability-plugin/charts/kuberse-observability` |
-| Destination (user's Gitea registry) | `<registry-host>/<org>/charts/<plugin-name>` | `gitea-http.platform.svc.cluster.local:3000/myorg/charts/kuberse-observability` |
+| Destination (user's registry) | `<registry-host>/<org>/charts/<plugin-name>` | `${REGISTRY_URL}/${ORG_NAME}/charts/kuberse-observability` |
 
-The CLI handles the path transformation during mirroring. In your templates, always use `gitea-http.platform.svc.cluster.local:3000/marioapgs/charts/<plugin-name>` -- the CLI resolves the placeholders to the destination paths.
+The CLI handles the path transformation during mirroring. In templates, always use `${REGISTRY_URL}/${ORG_NAME}/charts/<plugin-name>` so the CLI can resolve the destination path.
 
 #### Image overrides for mirrored images
 
@@ -279,7 +279,7 @@ helm:
     hello:
       enabled: true
       image:
-        repository: gitea-http.platform.svc.cluster.local:3000/marioapgs/my-image-name
+        repository: ${REGISTRY_URL}/${ORG_NAME}/my-image-name
 ```
 
 The CLI mirrors images to `<registry>/<org>/<image-name>` (only the last path segment of the source image is preserved).
@@ -362,7 +362,7 @@ When you run `kuberse plugin install oci://ghcr.io/<owner>/my-plugin-plugin:1.0.
 5. **Idempotency check** -- if already installed, prompts for reinstall/upgrade/downgrade.
 6. **Mirror artifacts** -- copies every chart and image from source to destination registry with a single `oras copy` each (`OciManager.mirror_artifact`). There is no chart-vs-image distinction: `oras copy` replicates the artifact with its layers, so no `crane`, `docker`, or `helm pull/push` is involved. Charts are copied to **their concrete version tag plus `:latest`** in one command (`oras copy <src> <dst>:<version>,latest`) because ArgoCD references the chart by `targetRevision: <version>`; the resolved version also feeds the version placeholder (e.g. `MY_PLUGIN_VERSION=0.1.0`). Images are copied to `<registry>/<org>/<image-name>` (last path segment) plus `:latest`.
 7. **Copy manifests** -- copies the manifest files into `plugins/<name>/` in the registry repo.
-8. **Resolve placeholders** -- substitutes `gitea-http.platform.svc.cluster.local:3000`, `marioapgs`, `kuberse.net`, `${MY_PLUGIN_VERSION}`, etc. with actual values from platform config + the chart version computed in step 6.
+8. **Resolve placeholders** -- substitutes `${REGISTRY_URL}`, `${ORG_NAME}`, `${BASE_DOMAIN}`, `${MY_PLUGIN_VERSION}`, etc. with actual values from platform config + the chart version computed in step 6.
 9. **Write install record** -- saves metadata to `plugins/<name>/install-record.json`.
 10. **Commit and push** -- commits to the registry repo with `feat: install plugin <name> v<ver>`.
 11. **Seed secrets** -- scans for `secrets-expected.json` and populates Vault.
@@ -614,7 +614,7 @@ oras tag --plain-http \
 
 Get credentials from: `kubectl -n argocd get secret gitea-oci-creds -o yaml` (base64-decode `username` and `password`).
 
-> **Note on the Gitea OCI path:** Gitea's container registry uses the pattern `<host>/<owner>/<package-path>`. When the CLI mirrors charts, it pushes to `<host>/<org>/charts/<plugin-name>`. The `marioapgs` placeholder resolves to your org name.
+> **Note on the Gitea OCI path:** Gitea's container registry uses the pattern `<host>/<owner>/<package-path>`. When the CLI mirrors charts, it pushes to `<host>/<org>/charts/<plugin-name>`. `${ORG_NAME}` resolves to your org name.
 
 ### Pods stuck in `Init:0/2`
 
@@ -679,10 +679,10 @@ The CLI resolves placeholders using values from the platform config (`/etc/kuber
 
 | Placeholder | Config key | Example value |
 |-------------|-----------|---------------|
-| `gitea-http.platform.svc.cluster.local:3000` | `registry_url` | `gitea-http.platform.svc.cluster.local:3000` |
-| `http://gitea-http.platform.svc.cluster.local:3000/marioapgs` | `git_base_url` | `http://gitea-http.platform.svc.cluster.local:3000/myorg` |
-| `marioapgs` | `org_name` | `myorg` |
-| `kuberse.net` | `base_domain` | `example.com` |
+| `${REGISTRY_URL}` | `registry_url` | `gitea-http.platform.svc.cluster.local:3000` |
+| `${GIT_BASE_URL}` | `git_base_url` | `http://gitea-http.platform.svc.cluster.local:3000/my-org` |
+| `${ORG_NAME}` | `org_name` | `my-org` |
+| `${BASE_DOMAIN}` | `base_domain` | `example.com` |
 | `${<PLUGIN>_VERSION}` | *(auto-generated)* | `0.1.0` (from chart version during mirroring) |
 
 To inspect current values from inside the cluster:
@@ -724,7 +724,7 @@ cli/kuberse_cli/
 ### Canonical layout rules (enforced by `kuberse plugin validate`)
 
 1. App-of-apps file **must** be named `argocd-app-of-apps.yaml`
-2. `repoURL` **must** use `http://gitea-http.platform.svc.cluster.local:3000/marioapgs` or `gitea-http.platform.svc.cluster.local:3000/marioapgs` placeholders -- no hardcoded hosts
+2. `repoURL` **must** use `${GIT_BASE_URL}` for Git or `oci://${REGISTRY_URL}/${ORG_NAME}` for OCI -- no hardcoded hosts or owners
 3. `targetRevision` **must** use `${<PLUGIN_UPPER>_VERSION}` placeholder or a literal chart version
 4. `syncOptions` **must** include `ServerSideApply=true` on every Application
-5. No hardcoded literals (`kuberse-registry`, `ghcr.io`, `MarioAPGS`, etc.) in committed manifests
+5. No hardcoded installation-specific literals (`kuberse-registry`, registry hosts, organization names, etc.) in committed manifests

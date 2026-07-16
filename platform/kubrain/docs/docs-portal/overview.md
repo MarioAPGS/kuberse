@@ -5,7 +5,7 @@ Kubrain includes a documentation portal that renders markdown documentation from
 Open it at:
 
 ```text
-https://kubrain.kuberse.net/docs
+https://kubrain.${BASE_DOMAIN}/docs
 ```
 
 If no documentation entities have been registered yet, Kubrain shows an empty state:

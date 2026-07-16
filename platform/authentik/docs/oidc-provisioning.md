@@ -54,7 +54,7 @@ data:
     name: My Module                         # Provider name in Authentik
     slug: my-module                          # URL slug for the application
     redirectUris:
-      - url: "https://my-module.kuberse.net/callback"
+      - url: "https://my-module.${BASE_DOMAIN}/callback"
         matchingMode: strict
     provider:
       authorizationFlow: default-provider-authorization-implicit-consent
@@ -63,7 +63,7 @@ data:
       extraScopes:
         - groups                             # Include group memberships in JWT
     application:
-      launchUrl: "https://my-module.kuberse.net"
+      launchUrl: "https://my-module.${BASE_DOMAIN}"
     vault:
       secretPath: "my-module/oidc"           # Where to write clientID/clientSecret
 ```
@@ -90,7 +90,7 @@ For each discovered OIDC config, the provisioner writes to `secret/<vault.secret
 {
   "clientID": "auto-generated-by-authentik",
   "clientSecret": "auto-generated-by-authentik",
-  "issuer": "https://auth.kuberse.net/application/o",
+  "issuer": "https://auth.${BASE_DOMAIN}/application/o",
   "slug": "my-module"
 }
 ```
@@ -105,16 +105,16 @@ For each discovered OIDC config, the provisioner writes to `secret/<vault.secret
 
 ## DNS Hairpin
 
-The OIDC Provisioner Job patches CoreDNS to resolve `auth.kuberse.net` to the NGINX Ingress Controller's ClusterIP. Without this, in-cluster pods trying to reach the OIDC endpoints via the external hostname would hit Cloudflare Access and get blocked with an HTML login page instead of a JSON response.
+The OIDC Provisioner Job patches CoreDNS to resolve `auth.${BASE_DOMAIN}` to the NGINX Ingress Controller's ClusterIP. Without this, in-cluster pods trying to reach the OIDC endpoints via the external hostname would hit Cloudflare Access and get blocked with an HTML login page instead of a JSON response.
 
 ```mermaid
 graph LR
     subgraph "Without Hairpin"
-        POD1["Pod (OIDC client)"] -->|"auth.kuberse.net"| CF["Cloudflare Access<br/>(blocks with HTML)"]
+        POD1["Pod (OIDC client)"] -->|"auth.${BASE_DOMAIN}"| CF["Cloudflare Access<br/>(blocks with HTML)"]
     end
 
     subgraph "With Hairpin"
-        POD2["Pod (OIDC client)"] -->|"auth.kuberse.net<br/>(resolves to ClusterIP)"| NGINX["NGINX Ingress"] --> AUTH["Authentik<br/>(returns JSON)"]
+        POD2["Pod (OIDC client)"] -->|"auth.${BASE_DOMAIN}<br/>(resolves to ClusterIP)"| NGINX["NGINX Ingress"] --> AUTH["Authentik<br/>(returns JSON)"]
     end
 ```
 

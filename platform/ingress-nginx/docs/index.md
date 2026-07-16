@@ -20,12 +20,12 @@ A **wrapper chart** around the official NGINX Ingress Controller Helm chart. It 
 graph LR
     CFT["Cloudflare Tunnel<br/>(cloudflared pods)"] --> NGINX["NGINX Ingress Controller<br/>(host-based routing)"]
 
-    NGINX -->|vault.kuberse.net| V["Vault<br/>(platform)"]
-    NGINX -->|argocd.kuberse.net| ARGO["ArgoCD<br/>(argocd)"]
-    NGINX -->|kiops.kuberse.net| KI["Kiops<br/>(platform)"]
-    NGINX -->|api.kuberse.net| API["Kuberse API<br/>(platform)"]
-    NGINX -->|cloudbeaver.kuberse.net| CB["CloudBeaver<br/>(platform)"]
-    NGINX -->|"{ns}-code.kuberse.net"| CS["code-server<br/>(BuildApp labs)"]
+    NGINX -->|vault.${BASE_DOMAIN}| V["Vault<br/>(platform)"]
+    NGINX -->|argocd.${BASE_DOMAIN}| ARGO["ArgoCD<br/>(argocd)"]
+    NGINX -->|kiops.${BASE_DOMAIN}| KI["Kiops<br/>(platform)"]
+    NGINX -->|api.${BASE_DOMAIN}| API["Kuberse API<br/>(platform)"]
+    NGINX -->|cloudbeaver.${BASE_DOMAIN}| CB["CloudBeaver<br/>(platform)"]
+    NGINX -->|"{ns}-code.${BASE_DOMAIN}"| CS["code-server<br/>(BuildApp labs)"]
 ```
 
 ## Resources Created (via upstream chart)
@@ -72,12 +72,12 @@ Traffic passes through Cloudflare Edge -> Tunnel -> cloudflared pod -> NGINX. Wi
 | Module | Interaction |
 |--------|------------|
 | **Cloudflare Tunnel** | Routes all public traffic to `ingress-nginx-controller.platform.svc.cluster.local:80`. Init containers in cloudflared wait for NGINX to be ready. |
-| **Vault** | Creates Ingress resource for `vault.kuberse.net` |
-| **ArgoCD Config** | Creates Ingress resource for `argocd.kuberse.net` |
-| **Kiops** | Creates Ingress resource for `kiops.kuberse.net` |
-| **Kuberse API** | Creates Ingress resource for `api.kuberse.net` |
-| **CloudBeaver** | Creates Ingress resource for `cloudbeaver.kuberse.net` |
-| **BuildApp (code-server)** | Creates Ingress resources for `{namespace}-code.kuberse.net` (one per lab, covered by `*.kuberse.net` wildcard) |
+| **Vault** | Creates Ingress resource for `vault.${BASE_DOMAIN}` |
+| **ArgoCD Config** | Creates Ingress resource for `argocd.${BASE_DOMAIN}` |
+| **Kiops** | Creates Ingress resource for `kiops.${BASE_DOMAIN}` |
+| **Kuberse API** | Creates Ingress resource for `api.${BASE_DOMAIN}` |
+| **CloudBeaver** | Creates Ingress resource for `cloudbeaver.${BASE_DOMAIN}` |
+| **BuildApp (code-server)** | Creates Ingress resources for `{namespace}-code.${BASE_DOMAIN}` (one per lab, covered by `*.${BASE_DOMAIN}` wildcard) |
 | **k3s** | k3s is configured with `--disable=traefik --disable=servicelb` to avoid conflicting with ingress-nginx |
 
 ## Debugging
@@ -96,5 +96,5 @@ kubectl get ingress --all-namespaces
 kubectl get ingressclass
 
 # Test connectivity via NodePort
-curl http://<node-ip>:30080 -H "Host: vault.kuberse.net"
+curl http://<node-ip>:30080 -H "Host: vault.${BASE_DOMAIN}"
 ```

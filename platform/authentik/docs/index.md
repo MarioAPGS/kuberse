@@ -9,7 +9,7 @@
 | **Namespace** | `platform` |
 | **Image** | `ghcr.io/goauthentik/server:latest` |
 | **Dependencies** | Vault (Wave 1), PostgreSQL (Wave 1), Ingress NGINX (Wave 1) |
-| **URL** | `https://auth.kuberse.net` |
+| **URL** | `https://auth.${BASE_DOMAIN}` |
 
 ## Overview
 
@@ -45,7 +45,7 @@ graph TB
         end
 
         SVC["Service authentik-server<br/>:9000 / :9443"]
-        ING["Ingress<br/>auth.kuberse.net"]
+        ING["Ingress<br/>auth.${BASE_DOMAIN}"]
     end
 
     subgraph "Vault"
@@ -84,7 +84,7 @@ graph TB
 | Deployment | `authentik-redis` | Redis 7 cache/broker |
 | Service | `authentik-server` | ClusterIP on ports 9000 (HTTP) and 9443 (HTTPS) |
 | Service | `authentik-redis` | ClusterIP on port 6379 |
-| Ingress | `authentik` | Routes `auth.kuberse.net` to port 9000 |
+| Ingress | `authentik` | Routes `auth.${BASE_DOMAIN}` to port 9000 |
 | ServiceAccount | `authentik-sa` | Single SA for all Authentik resources |
 | ConfigMap | `authentik-blueprints` | YAML blueprints auto-applied on startup (groups, scope mappings) |
 | ConfigMap | `authentik-oidc-provisioner-script` | Embeds `provision-oidc.py` |
@@ -171,7 +171,7 @@ The OIDC Provisioner is an ArgoCD **PostSync hook** -- it runs after every succe
 - **First deployment**: runs once Authentik pods are healthy
 - **New OIDC client added**: if another module adds a ConfigMap labeled `kuberse.net/authentik-oidc=true`, the provisioner will pick it up on the next Authentik sync (ArgoCD auto-syncs periodically, or you can force it)
 - **Manual re-trigger**: delete the completed Job and sync the Authentik app: `kubectl delete job authentik-oidc-provisioner -n platform` then trigger ArgoCD sync
-- **DNS hairpin side-effect**: this Job also patches CoreDNS to resolve `auth.kuberse.net` to the NGINX Ingress ClusterIP. If CoreDNS is ever reset, re-sync Authentik to restore it.
+- **DNS hairpin side-effect**: this Job also patches CoreDNS to resolve `auth.${BASE_DOMAIN}` to the NGINX Ingress ClusterIP. If CoreDNS is ever reset, re-sync Authentik to restore it.
 
 ### Database startup race
 
@@ -193,7 +193,7 @@ No manual intervention is needed. The CrashLoopBackOff resolves automatically.
 | `worker.replicas` | `1` | Worker replicas |
 | `service.httpPort` | `9000` | HTTP port |
 | `service.httpsPort` | `9443` | HTTPS port |
-| `ingress.host` | `auth.kuberse.net` | Public hostname |
+| `ingress.host` | `auth.${BASE_DOMAIN}` | Public hostname |
 | `postgresql.host` | `postgres.platform.svc.cluster.local` | PostgreSQL host |
 | `postgresql.name` | `authentik` | Database name |
 | `vault.secretPath` | `authentik/main` | Single Vault path for all Authentik secrets |

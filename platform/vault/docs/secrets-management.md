@@ -324,7 +324,7 @@ This is a shared Secret (not in Vault) created during `kuberse setup` in the `pl
 | `registry_url` | Internal registry URL | CLI (placeholder resolution) |
 | `git_base_url` | Internal Git base URL | CLI (placeholder resolution) |
 | `org_name` | Organization name | CLI (placeholder resolution) |
-| `base_domain` | Base domain (e.g. `kuberse.net`) | CLI (placeholder resolution) |
+| `base_domain` | Base domain (e.g. `example.com`) | CLI (placeholder resolution) |
 | `cluster_mode` | `minikube` or `k3s` | CLI (init behavior) |
 | `git_provider` | `gitea` or `github` | CLI (provider selection) |
 

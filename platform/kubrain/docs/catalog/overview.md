@@ -5,7 +5,7 @@ The Catalog is Kubrain's main view. It shows platform entities as an interactive
 Open it at:
 
 ```text
-https://kubrain.kuberse.net/nodes
+https://kubrain.${BASE_DOMAIN}/nodes
 ```
 
 ## What the Catalog Shows

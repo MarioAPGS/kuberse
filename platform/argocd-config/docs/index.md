@@ -8,13 +8,13 @@
 | **Sync Wave** | 1 |
 | **Namespace** | `argocd` |
 | **Dependencies** | ArgoCD (installed during bootstrap), Vault (Wave 1), Authentik (Wave 1), Ingress NGINX (Wave 1) |
-| **URL** | `https://argocd.kuberse.net` |
+| **URL** | `https://argocd.${BASE_DOMAIN}` |
 
 ## Overview
 
 This chart does **not** install ArgoCD -- ArgoCD is installed separately during the platform bootstrap (`kuberse init`). Instead, this chart configures the existing ArgoCD instance with:
 
-- **Ingress** -- exposes ArgoCD at `argocd.kuberse.net` via NGINX
+- **Ingress** -- exposes ArgoCD at `argocd.${BASE_DOMAIN}` via NGINX
 - **OIDC SSO** -- integrates with Authentik so users log in via the platform identity provider
 - **RBAC** -- defines who gets admin vs read-only access
 
@@ -28,7 +28,7 @@ sequenceDiagram
     participant Argo as ArgoCD
     participant Auth as Authentik
 
-    User->>Argo: Open argocd.kuberse.net
+    User->>Argo: Open argocd.${BASE_DOMAIN}
     Argo->>User: Redirect to Authentik login
     User->>Auth: Authenticate (email/password or SSO)
     Auth->>User: Redirect back with OIDC token
@@ -52,7 +52,7 @@ Access is controlled through ArgoCD's built-in RBAC system:
 
 | Role | Who | Permissions |
 |------|-----|-------------|
-| `role:admin` | Users matching `marioapgs@gmail.com` or in the `admin` group | Full access: applications, clusters, repos, accounts, exec, logs |
+| `role:admin` | Users matching `${ADMIN_EMAIL}` or in the `admin` group | Full access: applications, clusters, repos, accounts, exec, logs |
 | `role:readonly` | Everyone else (default policy) | Read-only access to all resources |
 
 The admin email is set during platform bootstrap (stored in `kuberse-config` Secret). Group membership comes from the `groups` claim in the OIDC JWT token, which Authentik populates based on user assignments.
@@ -61,9 +61,9 @@ The admin email is set during platform bootstrap (stored in `kuberse-config` Sec
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| `ingress.host` | `argocd.kuberse.net` | External hostname |
+| `ingress.host` | `argocd.${BASE_DOMAIN}` | External hostname |
 | `oidc.enabled` | `true` | Enable OIDC SSO |
-| `oidc.issuer` | `https://auth.kuberse.net/application/o/argocd/` | Authentik OIDC issuer URL |
+| `oidc.issuer` | `https://auth.${BASE_DOMAIN}/application/o/argocd/` | Authentik OIDC issuer URL |
 | `oidc.scopes` | `[openid, profile, email, groups]` | OIDC scopes requested |
 | `rbac.defaultPolicy` | `role:readonly` | Default role for authenticated users |
 | `vault.secretPath` | `argocd/oidc` | Vault path for OIDC credentials |
@@ -75,7 +75,7 @@ The admin email is set during platform bootstrap (stored in `kuberse-config` Sec
 | ConfigMap | `argocd-cm` | ArgoCD server config (OIDC settings, URL) |
 | ConfigMap | `argocd-rbac-cm` | RBAC policy and scopes |
 | ConfigMap | `argocd-authentik-oidc` | Labeled for OIDC provisioner discovery |
-| Ingress | `argocd` | Routes `argocd.kuberse.net` to `argocd-server:443` (HTTPS backend) |
+| Ingress | `argocd` | Routes `argocd.${BASE_DOMAIN}` to `argocd-server:443` (HTTPS backend) |
 | VaultStaticSecret | `argocd-oidc-vault` | Syncs `secret/argocd/oidc` to K8s Secret |
 | ConfigMap | `argocd-config-vault-role` | Labeled `vault: setup-creds` for Vault CronJob |
 
@@ -118,7 +118,7 @@ kubectl get secret argocd-oidc-secrets -n argocd
 
 # Test OIDC discovery endpoint
 kubectl exec -it deploy/argocd-server -n argocd -- \
-  curl -s https://auth.kuberse.net/application/o/argocd/.well-known/openid-configuration | head -5
+  curl -s https://auth.${BASE_DOMAIN}/application/o/argocd/.well-known/openid-configuration | head -5
 ```
 
 ## Common Issues
@@ -126,6 +126,6 @@ kubectl exec -it deploy/argocd-server -n argocd -- \
 | Symptom | Cause | Fix |
 |---------|-------|-----|
 | "Log in via Authentik" button missing | OIDC not configured in `argocd-cm` | Check `kubectl get cm argocd-cm -n argocd -o yaml` for `oidc.config` |
-| OIDC login fails with "connection refused" | DNS hairpin not configured for `auth.kuberse.net` | Check CoreDNS: `kubectl get cm coredns -n kube-system -o yaml` |
+| OIDC login fails with "connection refused" | DNS hairpin not configured for `auth.${BASE_DOMAIN}` | Check CoreDNS: `kubectl get cm coredns -n kube-system -o yaml` |
 | "Unauthorized" after OIDC login | User email not in RBAC policy | Add user to `admin` group in Authentik or update `rbac.policy` |
 | Ingress returns 502 | ArgoCD server not ready | Check `kubectl get pods -n argocd` |

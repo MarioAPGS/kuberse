@@ -11,7 +11,7 @@ Kuberse uses a **zero-trust networking model** where no ports are exposed to the
 ```mermaid
 graph LR
     subgraph "External"
-        USER["Browser"] --> DNS["DNS<br/>*.kuberse.net"]
+        USER["Browser"] --> DNS["DNS<br/>*.${BASE_DOMAIN}"]
         DNS --> CF["Cloudflare Edge<br/>(TLS + Access Policy)"]
     end
 
@@ -27,28 +27,28 @@ graph LR
 
 ## Layer 1: Cloudflare DNS
 
-All public services are exposed under the `kuberse.net` domain. A wildcard CNAME record (`*.kuberse.net`) points to the Cloudflare Tunnel:
+All public services are exposed under the `${BASE_DOMAIN}` domain. A wildcard CNAME record (`*.${BASE_DOMAIN}`) points to the Cloudflare Tunnel:
 
 ```
-*.kuberse.net → CNAME → <tunnel-id>.cfargotunnel.com
+*.${BASE_DOMAIN} → CNAME → <tunnel-id>.cfargotunnel.com
 ```
 
 | Subdomain | Service |
 |-----------|---------|
-| `vault.kuberse.net` | Vault UI |
-| `argocd.kuberse.net` | ArgoCD UI |
-| `kiops.kuberse.net` | Kiops developer portal |
-| `api.kuberse.net` | Kuberse REST API |
-| `cloudbeaver.kuberse.net` | CloudBeaver web DB client |
-| `{ns}-code.kuberse.net` | code-server (VS Code web IDE) per BuildApp lab |
+| `vault.${BASE_DOMAIN}` | Vault UI |
+| `argocd.${BASE_DOMAIN}` | ArgoCD UI |
+| `kiops.${BASE_DOMAIN}` | Kiops developer portal |
+| `api.${BASE_DOMAIN}` | Kuberse REST API |
+| `cloudbeaver.${BASE_DOMAIN}` | CloudBeaver web DB client |
+| `{ns}-code.${BASE_DOMAIN}` | code-server (VS Code web IDE) per BuildApp lab |
 
-> code-server uses single-level subdomains (`{ns}-code.kuberse.net`) covered by the existing `*.kuberse.net` wildcard. No separate DNS record is needed.
+> code-server uses single-level subdomains (`{ns}-code.${BASE_DOMAIN}`) covered by the existing `*.${BASE_DOMAIN}` wildcard. No separate DNS record is needed.
 
 ## Layer 2: Cloudflare Zero Trust
 
 Before traffic reaches the cluster, Cloudflare enforces authentication and authorization:
 
-1. **Access Application**: A wildcard self-hosted application (`*.kuberse.net`) requires authentication for all requests
+1. **Access Application**: A wildcard self-hosted application (`*.${BASE_DOMAIN}`) requires authentication for all requests
 2. **Identity Providers**: OTP (email), Google OAuth, or GitHub OAuth
 3. **Access Policy**: Only allowed email addresses or email domains can access the platform
 4. **Session Duration**: Configurable (default 24 hours) -- users re-authenticate after expiry
@@ -69,10 +69,10 @@ Each public service is mapped to the internal NGINX Ingress Controller:
 
 ```yaml
 publicHostnames:
-  - hostname: vault.kuberse.net
+  - hostname: vault.${BASE_DOMAIN}
     service: http://ingress-nginx-controller.platform.svc.cluster.local:80
     originRequest:
-      httpHostHeader: vault.kuberse.net
+      httpHostHeader: vault.${BASE_DOMAIN}
       noTLSVerify: true
 ```
 
@@ -103,12 +103,12 @@ Each module that needs HTTP exposure creates its own Ingress resource:
 
 | Module | Host | Backend |
 |--------|------|---------|
-| Vault | `vault.kuberse.net` | `vault.platform:8200` |
-| ArgoCD | `argocd.kuberse.net` | `argocd-server.argocd:443` (HTTPS backend) |
-| Kiops | `kiops.kuberse.net` | `kiops.platform:7007` |
-| Kuberse API | `api.kuberse.net` | `kuberse-api-service.platform:8000` |
-| CloudBeaver | `cloudbeaver.kuberse.net` | `cloudbeaver.platform:8978` |
-| BuildApp code-server | `{namespace}-code.kuberse.net` | `{labName}-code-server.{namespace}:8080` |
+| Vault | `vault.${BASE_DOMAIN}` | `vault.platform:8200` |
+| ArgoCD | `argocd.${BASE_DOMAIN}` | `argocd-server.argocd:443` (HTTPS backend) |
+| Kiops | `kiops.${BASE_DOMAIN}` | `kiops.platform:7007` |
+| Kuberse API | `api.${BASE_DOMAIN}` | `kuberse-api-service.platform:8000` |
+| CloudBeaver | `cloudbeaver.${BASE_DOMAIN}` | `cloudbeaver.platform:8978` |
+| BuildApp code-server | `{namespace}-code.${BASE_DOMAIN}` | `{labName}-code-server.{namespace}:8080` |
 
 ## Remote kubectl Access
 

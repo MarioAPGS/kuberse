@@ -9,7 +9,7 @@
 | **Namespace** | `platform` |
 | **Image** | `gitea/gitea:1.23.7-rootless` |
 | **Dependencies** | Namespaces (Wave -1), Vault (Wave 1, optional), Ingress NGINX (Wave 1) |
-| **URL** | `https://gitea.kuberse.net` |
+| **URL** | `https://gitea.${BASE_DOMAIN}` |
 
 ## Overview
 
@@ -27,7 +27,7 @@ graph TB
         RUNNER["Actions Runner<br/>(act_runner 0.2.11)"]
         PVC["PVC gitea-data<br/>2Gi"]
         SVC["Service gitea-http<br/>ClusterIP :3000"]
-        ING["Ingress<br/>gitea.kuberse.net"]
+        ING["Ingress<br/>gitea.${BASE_DOMAIN}"]
     end
 
     subgraph "All Nodes"
@@ -76,7 +76,7 @@ A DaemonSet patches `/etc/hosts` on every node to resolve `gitea-http.platform.s
 | Setting | Default | Description |
 |---------|---------|-------------|
 | `image.tag` | `1.23.7-rootless` | Gitea version |
-| `ingress.host` | `gitea.kuberse.net` | External hostname |
+| `ingress.host` | `gitea.${BASE_DOMAIN}` | External hostname |
 | `persistence.size` | `2Gi` | Data volume size |
 | `config.actions.enabled` | `true` | Enable Gitea Actions |
 | `runner.enabled` | `true` | Deploy the Actions runner |
@@ -147,7 +147,7 @@ When you run `kuberse plugin install https://github.com/owner/plugin.git`:
 | PVC | `gitea-data` | 2Gi persistent volume |
 | Service | `gitea-http` | ClusterIP on port 3000 |
 | Service | `gitea-nodeport` | NodePort on 30300 (when enabled) |
-| Ingress | `gitea` | Routes `gitea.kuberse.net` |
+| Ingress | `gitea` | Routes `gitea.${BASE_DOMAIN}` |
 | ConfigMap | `gitea-config` | Gitea `app.ini` settings |
 | ServiceAccount | `gitea-sa` | For Vault auth (when enabled) |
 | ConfigMap | `gitea-vault-role` | Labeled `vault: setup-creds` (when vault enabled) |

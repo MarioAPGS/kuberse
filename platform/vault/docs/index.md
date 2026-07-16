@@ -61,7 +61,7 @@ graph TB
 | ServiceAccount | `vault-module-config` | SA for the discovery CronJob |
 | VaultConnection | `default` | Shared connection: `http://vault.platform.svc.cluster.local:8200` |
 | VaultAuth | `vault-auth` | Shared auth config for the VSO operator |
-| Ingress | `vault` | External access at `vault.kuberse.net` |
+| Ingress | `vault` | External access at `vault.${BASE_DOMAIN}` |
 
 ## Configuration
 
@@ -75,7 +75,7 @@ Key settings from `values.yaml`:
 | `vault.server.image.tag` | `1.19.0` | Vault server version |
 | `vaultConfig.initSecretName` | `vault-init-keys` | K8s Secret storing keys + root token |
 | `moduleConfig.schedule` | `*/5 * * * *` | Module discovery CronJob frequency |
-| `ingress.host` | `vault.kuberse.net` | External hostname |
+| `ingress.host` | `vault.${BASE_DOMAIN}` | External hostname |
 | `vault.injector.namespaceSelector` | `vault-injection: enabled` | Namespaces where the injector operates |
 
 ## Initialization Workflow

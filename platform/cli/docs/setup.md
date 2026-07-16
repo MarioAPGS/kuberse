@@ -161,16 +161,16 @@ Walks every file in the cloned repo (skipping `.git/`) and performs string subst
 
 | Placeholder | Replaced with |
 |-------------|---------------|
-| `gitea-http.platform.svc.cluster.local:3000` | OCI registry URL (e.g. `ghcr.io/myorg` or `gitea-http.platform.svc.cluster.local:3000/kuberse`) |
-| `http://gitea-http.platform.svc.cluster.local:3000/marioapgs` | Git server URL (e.g. `https://github.com` or `http://gitea-http.platform.svc.cluster.local:3000`) |
-| `marioapgs` | Organization name (e.g. `myorg` or `kuberse`) |
-| `kuberse.net` | Your chosen base domain |
-| `marioapgs@gmail.com` | Admin email address |
-| `marioapgs` | Derived from the email (part before `@`) |
-| `admin` | Admin password |
-| `gitea` | `github` or `gitea` |
-| `k3s` | `minikube` or `k3s` |
-| `` | External Git URL (may differ from internal for Gitea) |
+| `${REGISTRY_URL}` | OCI registry URL (e.g. `ghcr.io` or `gitea-http.platform.svc.cluster.local:3000`) |
+| `${GIT_BASE_URL}` | Internal Git server base URL |
+| `${ORG_NAME}` | Organization name (e.g. `my-org`) |
+| `${BASE_DOMAIN}` | Your chosen base domain |
+| `${ADMIN_EMAIL}` | Admin email address |
+| `${ADMIN_USERNAME}` | Derived from the email (part before `@`) |
+| `${ADMIN_PASSWORD}` | Admin password |
+| `${GIT_PROVIDER}` | `github` or `gitea` |
+| `${CLUSTER_MODE}` | `minikube` or `k3s` |
+| `${GIT_BASE_URL_EXTERNAL}` | External Git URL (may differ from internal for Gitea) |
 
 After this step, all Application manifests contain concrete values instead of template tokens.
 

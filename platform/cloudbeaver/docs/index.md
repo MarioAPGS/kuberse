@@ -9,11 +9,11 @@
 | **Namespace** | `platform` |
 | **App Version** | 25.2.5 |
 | **Dependencies** | Namespaces (Wave -1), PostgreSQL (Wave 1) |
-| **URL** | `https://cloudbeaver.kuberse.net` |
+| **URL** | `https://cloudbeaver.${BASE_DOMAIN}` |
 
 ## Overview
 
-This chart deploys CloudBeaver Community Edition in the `platform` namespace, providing a browser-based database management UI at `cloudbeaver.kuberse.net`.
+This chart deploys CloudBeaver Community Edition in the `platform` namespace, providing a browser-based database management UI at `cloudbeaver.${BASE_DOMAIN}`.
 
 The key feature is **automatic connection discovery** -- services do not need to configure connections manually in CloudBeaver. Instead, they create a labeled Kubernetes resource (Secret or ConfigMap), and a CronJob discovers it and registers the connection automatically in CloudBeaver's `data-sources.json`.
 
@@ -45,7 +45,7 @@ graph TB
         end
 
         SVC["Service cloudbeaver<br/>ClusterIP :8978"]
-        ING["Ingress<br/>cloudbeaver.kuberse.net"]
+        ING["Ingress<br/>cloudbeaver.${BASE_DOMAIN}"]
     end
 
     subgraph "Any Namespace"
@@ -76,7 +76,7 @@ graph TB
 | Deployment | `cloudbeaver` | CloudBeaver pod with 1 init container |
 | Service | `cloudbeaver` | ClusterIP on port 8978 |
 | PersistentVolumeClaim | `cloudbeaver-workspace` | 2Gi storage for CloudBeaver workspace |
-| Ingress | `cloudbeaver` | Routes `cloudbeaver.kuberse.net` to port 8978 |
+| Ingress | `cloudbeaver` | Routes `cloudbeaver.${BASE_DOMAIN}` to port 8978 |
 | ServiceAccount | `cloudbeaver-sa` | Single SA for all CloudBeaver resources |
 | ConfigMap | `cloudbeaver-onboarding-script` | Embeds `onboard-connections.py` |
 | CronJob | `cloudbeaver-db-onboarding` | Runs the discovery script every 5 minutes |
@@ -124,7 +124,7 @@ CloudBeaver reads admin credentials from the shared `kuberse-config` Kubernetes 
 | `updateStrategy.type` | `Recreate` | Update strategy (Recreate for PVC access) |
 | `service.port` | `8978` | Service port |
 | `persistence.size` | `2Gi` | PVC size |
-| `ingress.host` | `cloudbeaver.kuberse.net` | Public hostname |
+| `ingress.host` | `cloudbeaver.${BASE_DOMAIN}` | Public hostname |
 | `admin.credSecretName` | `kuberse-config` | Secret containing admin credentials |
 | `dbOnboarding.cronSchedule` | `*/5 * * * *` | CronJob schedule |
 | `dbOnboarding.namespaceToSearch` | `null` | Namespace filter (`null` = all, `[]` = disabled, `[list]` = specific) |

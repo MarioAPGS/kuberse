@@ -41,7 +41,7 @@ Bootstraps a new Kuberse platform. You run this from your local machine.
 kuberse update [--artifacts]
 ```
 
-Syncs your registry fork with the upstream Kuberse registry, resolves any new template placeholders (values like `kuberse.net` that get substituted with your environment-specific configuration), and commits/pushes the result.
+Syncs your registry fork with the upstream Kuberse registry, resolves new template placeholders such as `${BASE_DOMAIN}`, and commits/pushes the result.
 
 | Flag | Description |
 |------|-------------|

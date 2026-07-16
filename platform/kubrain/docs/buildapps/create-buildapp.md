@@ -5,7 +5,7 @@ BuildApps are on-demand development environments managed by Kuberse. They are us
 Open the creation page at:
 
 ```text
-https://kubrain.kuberse.net/buildapp
+https://kubrain.${BASE_DOMAIN}/buildapp
 ```
 
 ![BuildApp creation form](../images/kubrain-buildapp-form.png)
@@ -32,7 +32,7 @@ The editor accepts JSON. The default example includes the main `dev` container, 
 {
   "imagePullSecret": "registry-secret",
   "dev": {
-    "image": "ghcr.io/marioapgs/dev-kit:dind",
+    "image": "${REGISTRY_URL}/${ORG_NAME}/kuberse/img/dev-kit:dind",
     "imagePullSecret": "registry-secret",
     "secrets": [
       {
@@ -88,7 +88,7 @@ The editor accepts JSON. The default example includes the main `dev` container, 
       "path": "mongo"
     }
   ],
-  "repos": ["https://github.com/marioapgs/finances.git"]
+  "repos": ["https://github.com/my-org/my-app.git"]
 }
 ```
 
