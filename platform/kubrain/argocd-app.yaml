@@ -28,6 +28,20 @@ spec:
             repository: ${REGISTRY_URL}/${ORG_NAME}/kuberse/img/kubrain
             tag: latest
             pullPolicy: Always
+          authentikOidc:
+            enabled: true
+            name: Kubrain
+            slug: kubrain
+            issuer: "https://auth.${BASE_DOMAIN}/application/o/kubrain/"
+            redirectUris:
+              - url: "https://kubrain.${BASE_DOMAIN}/auth/callback"
+                matchingMode: strict
+            provider:
+              clientType: public
+              clientId: kubrain
+              subMode: hashed_user_id
+            application:
+              launchUrl: "https://kubrain.${BASE_DOMAIN}"
           vault:
             enabled: true
             host: http://vault.platform.svc.cluster.local:8200
@@ -58,6 +72,16 @@ spec:
               database:
                 url: env.PG_CONNECTION_STRING
                 synchronize: true
+              auth:
+                providers:
+                  - id: authentik
+                    displayName: Authentik
+                    issuer: https://auth.${BASE_DOMAIN}/application/o/kubrain/
+                    audience: kubrain
+                    clientId: kubrain
+                    subjectClaim: sub
+                    scopes: [openid, profile, email]
+                    insecureSkipVerify: true
               ingestion:
                 github:
                   owner: ${ORG_NAME}

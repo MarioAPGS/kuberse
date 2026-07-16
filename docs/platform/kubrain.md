@@ -91,6 +91,7 @@ kubrain:
             clientId: kubrain
             subjectClaim: sub
             scopes: [openid, profile, email]
+            insecureSkipVerify: true
 ```
 
 `auth.providers` accepts multiple entries. If authorization, token or JWKS
