@@ -8,6 +8,7 @@
 | `/buildapp` | Create BuildApp | Form and JSON editor for creating a BuildApp development environment |
 | `/docs` | Docs List | Lists registered `kind: Doc` catalog entities |
 | `/docs/:entityRef` | Docs Viewer | Renders markdown documentation for one Doc entity |
+| `/auth/callback` | OIDC Callback | Completes the public-client Authorization Code + PKCE flow |
 
 ## Sidebar Navigation
 

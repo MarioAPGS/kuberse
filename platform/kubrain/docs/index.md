@@ -7,6 +7,7 @@
 | **URL** | `https://kubrain.kuberse.net` |
 | **Main Route** | `/nodes` |
 | **User Features** | Catalog graph, ArgoCD resources, BuildApp creation/editing, docs portal |
+| **Authentication** | External OIDC Authorization Code + PKCE; local permissions |
 
 ## What You Can Do
 
@@ -48,9 +49,20 @@ flowchart LR
 
 ## Authentication
 
-Kubrain is normally exposed through Cloudflare Access at `kubrain.kuberse.net`. If your browser is not already authenticated, Cloudflare will prompt you before Kubrain loads.
+Kubrain loads public `/api/v1/auth/config` and presents one login option per
+configured external OIDC provider. The browser uses Authorization Code + PKCE,
+then sends the JWT access token on protected API calls. The profile control
+shows the effective identity and permissions and provides local logout.
 
-Kubrain itself does not currently expose a separate login/logout screen inside the application.
+Authorization is local to Kubrain: a first-time OIDC identity has no permissions
+until an operator grants them. Kubrain does not derive permissions from token
+groups. With no providers configured, Kubrain instead uses the reserved
+anonymous system administrator; this is not guest access.
+
+Cloudflare Access can still protect the ingress as an additional outer layer,
+but it does not replace Kubrain's own OIDC and permission checks.
+
+See the platform [Kubrain authentication guide](../../../docs/platform/kubrain.md).
 
 ## Screenshots
 

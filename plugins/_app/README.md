@@ -87,6 +87,10 @@ http://localhost:5180/api/v1/my-service/health
 
 Puedes cambiar el target del proxy en `vite.config.ts` si tu backend corre en otro puerto.
 
+> El gateway generico de Kubrain es temporalmente publico. No dependas de que
+> propague el JWT OIDC o los permisos locales al backend; aplica restricciones
+> de ingress mientras no exista autorizacion especifica del gateway.
+
 ### 5. Build para produccion
 
 ```bash
