@@ -15,6 +15,7 @@ Welcome to the Kuberse platform documentation. This is the central reference for
 ## Platform Components
 
 - [Components Overview](platform/overview.md) — Every component with sync waves and responsibilities
+- [Kubrain](platform/kubrain.md) — OIDC authentication, local permissions, and Helm configuration
 
 ## Plugin System
 

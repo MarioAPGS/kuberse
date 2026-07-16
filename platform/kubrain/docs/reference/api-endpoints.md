@@ -2,6 +2,20 @@
 
 This reference lists the user-facing API areas that power Kubrain's UI. Most users interact through the frontend, but these endpoints explain what each screen uses.
 
+Except for routes explicitly identified as public, requests require a verified
+OIDC access token (when providers are configured) and the endpoint's local
+permission.
+
+## Authentication
+
+| Method | Path | Access | Purpose |
+|--------|------|--------|---------|
+| `GET` | `/api/v1/auth/config` | Public | Browser-safe provider and bearer-header configuration |
+| `GET` | `/api/v1/auth/me` | Authenticated | Effective identity and local permissions |
+
+In anonymous mode, `/auth/me` returns the reserved `internal/anonymous` system
+identity. See the [authentication guide](../../../../docs/platform/kubrain.md).
+
 ## Catalog
 
 | Method | Path | Used By |
@@ -85,3 +99,10 @@ Kubrain also exposes operator-facing Vault secret endpoints. These are not curre
 | Method | Path | Purpose |
 |--------|------|---------|
 | `POST` | `/api/v1/vault/secrets/platform/*` | Store platform secrets under Vault KV v2 |
+
+## Temporary Public Gateway Exceptions
+
+The generic service proxy `/api/v1/:serviceName/*`, agent discovery
+`/api/v1/agents`, agent proxy `/agents/v1/:agentName/*`, and Swagger UI/JSON are
+currently public exceptions. Restrict them at ingress until gateway-specific
+authorization is implemented.

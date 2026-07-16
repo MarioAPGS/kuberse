@@ -53,6 +53,7 @@ graph TB
     Vault -.->|"provides secrets"| Plugins
     PG -.->|"provides databases"| Authentik
     PG -.->|"provides databases"| Kubrain
+    Authentik -->|"OIDC access tokens"| Kubrain
     Ingress -->|"routes traffic"| Wave3
     Net -->|"exposes cluster"| CF
     ArgoCD -->|"pulls charts from"| GH
@@ -71,6 +72,31 @@ graph TB
 5. **Plugin extensibility** — New capabilities ship as OCI artifacts (chart + manifests). The CLI mirrors them to the user's registry and injects resolved manifests into this repo. ArgoCD does the rest.
 
 ## Data Flows
+
+### Kubrain Authentication and Authorization
+
+```mermaid
+sequenceDiagram
+    participant Browser
+    participant Kubrain as Kubrain SPA/API
+    participant IdP as Configured OIDC provider
+    participant DB as PostgreSQL
+
+    Browser->>Kubrain: GET /api/v1/auth/config
+    Kubrain-->>Browser: Public provider and bearer-header configuration
+    Browser->>IdP: Authorization Code + PKCE
+    IdP-->>Browser: JWT access token
+    Browser->>Kubrain: Protected API request + Bearer token
+    Kubrain->>IdP: Validate issuer, audience, signature and time claims via JWKS
+    Kubrain->>DB: Upsert local identity and load permissions
+    Kubrain-->>Browser: Authorized response (or 401/403)
+```
+
+Kubrain accepts multiple explicitly configured external OIDC providers. The
+provider proves identity; Kubrain keeps its own identity and hierarchical
+permission records. With no providers configured, requests use the reserved
+`internal/anonymous` system identity with full permissions. See
+[Kubrain](platform/kubrain.md) for the trust model and deployment settings.
 
 ### Secret Provisioning
 

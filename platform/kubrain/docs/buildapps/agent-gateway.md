@@ -2,6 +2,10 @@
 
 Kubrain provides an API gateway to interact with the OpenCode AI coding agents running inside each BuildApp pod. Instead of connecting directly to each agent or using the MCP server, you access all agent operations through a unified REST API with the BuildApp name in the URL.
 
+> Gateway authorization is transitional. Generic and named agent gateway routes
+> include explicitly public exceptions today. Restrict them at ingress and do
+> not assume Kubrain's OIDC token or local permissions are propagated upstream.
+
 ## URL Convention
 
 ```

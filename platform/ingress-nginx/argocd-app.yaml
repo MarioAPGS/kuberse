@@ -45,6 +45,9 @@ spec:
                 enabled: true
                 serviceMonitor:
                   enabled: false
+              # Local HTTPS default cert (opt-in): platform/kuberse-local-tls
+              extraArgs: {}
+              #  default-ssl-certificate: platform/kuberse-local-tls
   destination:
     server: https://kubernetes.default.svc
     namespace: platform

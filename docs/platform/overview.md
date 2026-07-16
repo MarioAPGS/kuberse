@@ -74,6 +74,13 @@ The platform's control plane and user-facing hub:
 - Documentation portal (renders markdown from repos)
 - Plugin management UI
 - Remote UI components from plugins (`_app/` template)
+- External OIDC login with one or more providers; the bundled Authentik client
+  is public and uses Authorization Code + PKCE
+- Local identities and hierarchical permissions enforced by the API
+
+With no OIDC providers, Kubrain runs as the reserved anonymous system
+administrator for backward compatibility. This is not a guest/read-only mode.
+See the [Kubrain authentication and authorization guide](kubrain.md).
 
 ### Playhouse
 

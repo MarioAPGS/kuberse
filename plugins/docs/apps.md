@@ -90,6 +90,11 @@ flowchart TB
 El archivo `src/App.tsx` actua como wrapper de desarrollo: simula las props que
 kubrain pasaria en produccion. Modificalo para probar diferentes escenarios.
 
+> Seguridad: el gateway generico de Kubrain es una excepcion temporalmente
+> publica. No presupongas que propaga el token OIDC ni los permisos locales al
+> backend del plugin; restringe el servicio en ingress hasta que exista
+> autorizacion especifica del gateway.
+
 ### Paso 3: Build
 
 ```bash
