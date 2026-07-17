@@ -73,6 +73,9 @@ spec:
                 url: env.PG_CONNECTION_STRING
                 synchronize: true
               auth:
+                # Identity/permission cache TTL in seconds (integer >= 0). Default 3600.
+                # 0 disables caching so permission changes apply without a pod restart.
+                cacheTtlSeconds: 0
                 providers:
                   - id: authentik
                     displayName: Authentik
